@@ -42,11 +42,11 @@ public class Alexa2EV3Speechlet implements SpeechletV2 {
 	 */
 	private static final String ALEXA2EV3_CARD_TITLE = "Alexa2Lego Skill";
 
-	private static final String WELCOME_TEXT = "Willkommen beim Alexa2EV3 Skill. Sag mir dein Kommando.";
+	private static final String WELCOME_TEXT = "Willkommen. Sag mir dein Kommando.";
 
 	private static final String GOODBYE_TEXT = "Auf Wiedersehen!";
 
-	private static final String HELP_TEXT = "Du kannst sagen zum Beispiel. Geradeaus, zwei. Rückwärts, fünf. Links. Rechts.";
+	private static final String HELP_TEXT = "Du kannst sagen zum Beispiel. Arm links zwanzig. Arm rechts. Arm Greifen. Status Batterie.";
 
 	private static final String UNHANDLED_TEXT = "Ich habe Dein Kommando nicht verstanden. Bitte versuche noch ein mal.";
 
@@ -60,7 +60,7 @@ public class Alexa2EV3Speechlet implements SpeechletV2 {
 
 	private static final String SLOT_STATE_PARAMETER = "Parameter";
 
-	private static final String STATE_REPROMT_TEXT = "Du kannst Status abfragen, indem Du zum Beispiel sagst. Status Batterien!";
+	private static final String STATE_REPROMT_TEXT = "Du kannst Status abfragen, indem Du zum Beispiel sagst. Status Batterie.";
 
 	private Alexa2EV3SnsClient snsClient;
 
