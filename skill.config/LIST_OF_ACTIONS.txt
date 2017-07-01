@@ -1,0 +1,8 @@
+Hoch
+Runter
+Links
+Rechts
+Greifen
+Loslassen
+Öffnen
+Stopp

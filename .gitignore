@@ -45,4 +45,5 @@ debug
 .idea
 .project
 .classpath
+.settings
 package-lock.json

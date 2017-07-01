@@ -124,6 +124,7 @@ var app = Consumer.create({
                 doArmCatch();
                 break;
             case "release":
+            case "open":
                 doArmRelease();
                 break;
             case "stop":
