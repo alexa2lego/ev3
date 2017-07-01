@@ -5,8 +5,14 @@ import java.util.Optional;
 
 public enum Alexa2EV3Action {
 	// @formatter:off
-	LEFT("links", "left"), RIGHT("rechts", "right"), STOP("stopp", "stop"), UP("hoch", "up"), DOWN("runter",
-			"down"), CATCH("greifen", "catch"), RELEASE("loslassen", "release"), OPEN("öffnen", "open");
+	LEFT("links", "left"), 
+	RIGHT("rechts", "right"), 
+	STOP("stopp", "stop"), 
+	UP("hoch", "up"), 
+	DOWN("runter", "down"), 
+	CATCH("greifen", "catch"), 
+	RELEASE("loslassen", "release"), 
+	OPEN("öffnen", "release");
 	// @formatter:on
 
 	private String actionDe;
