@@ -11,20 +11,21 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * {@link Alexa2EV3IotClient} creates a command messages and publishts it using
- * Amazon SNS topic.
+ * {@link Alexa2Ev3IotClient} creates a IoT client that retrieves current state
+ * of EV3 IoT
  * 
  * @author kantor
  *
  */
-public class Alexa2EV3IotClient {
-	private static final Logger LOG = LoggerFactory.getLogger(Alexa2EV3IotClient.class);
-	private static Alexa2EV3IotClient instance;
+public class Alexa2Ev3IotClient {
+
+	private static final Logger LOG = LoggerFactory.getLogger(Alexa2Ev3IotClient.class);
+	private static Alexa2Ev3IotClient instance;
 	private static AWSIotDevice device;
 	private static ObjectMapper objectMapper;
 	private static AWSIotMqttClient iotClient;
 
-	private Alexa2EV3IotClient(String clientEndpoint, String clientId, String awsAccessKeyId, String awsSecretAccessKey,
+	private Alexa2Ev3IotClient(String clientEndpoint, String clientId, String awsAccessKeyId, String awsSecretAccessKey,
 			String thingName) {
 		iotClient = new AWSIotMqttClient(clientEndpoint, clientId, awsAccessKeyId, awsSecretAccessKey);
 		iotClient.setKeepAliveInterval(5);
@@ -37,36 +38,41 @@ public class Alexa2EV3IotClient {
 		}
 		objectMapper = new ObjectMapper();
 		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
 	}
 
-	public static synchronized Alexa2EV3IotClient getInstance() {
+	public static synchronized Alexa2Ev3IotClient getInstance() {
 		if (instance != null) {
 			throw new IllegalStateException("already initialized");
 		}
 
-		instance = new Alexa2EV3IotClient(System.getenv("aws_iot_endpoint"), System.getenv("aws_iot_client"),
+		instance = new Alexa2Ev3IotClient(System.getenv("aws_iot_endpoint"), System.getenv("aws_iot_client"),
 				System.getenv("aws_iot_accessKeyId"), System.getenv("aws_iot_secretAccessKey"),
 				System.getenv("aws_iot_thing_name"));
 
 		return instance;
 	}
 
-	public Ev3ArmThingState sendRequest() throws Alexa2EV3Exception {
+	/**
+	 * Retrieves state from the EV3 thing shadow
+	 * 
+	 * @return object of {@link Ev3ThingState}
+	 * @throws Alexa2Ev3Exception
+	 */
+	public Ev3ThingState getThingState() throws Alexa2Ev3Exception {
 		try {
 
 			if (iotClient.getConnectionStatus().equals(AWSIotConnectionStatus.DISCONNECTED)) {
 				iotClient.connect();
 			}
-			// Retrieve updated document from the shadow
+
 			String shadowState = device.get();
 
-			Ev3ArmThingState thingState = objectMapper.readValue(shadowState, Ev3ArmThingState.class);
+			Ev3ThingState thingState = objectMapper.readValue(shadowState, Ev3ThingState.class);
 			LOG.info(String.format("IoT Device has shadowState: %s", shadowState));
 
 			return thingState;
 		} catch (Exception e) {
-			throw new Alexa2EV3Exception("sending request for current state failed", e);
+			throw new Alexa2Ev3Exception("sending request for current state failed", e);
 		}
 	}
 

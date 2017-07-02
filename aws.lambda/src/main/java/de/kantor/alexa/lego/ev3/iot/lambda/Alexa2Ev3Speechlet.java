@@ -1,5 +1,6 @@
 package de.kantor.alexa.lego.ev3.iot.lambda;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 
 import org.eclipse.paho.client.mqttv3.util.Strings;
@@ -20,39 +21,39 @@ import com.amazon.speech.ui.OutputSpeech;
 import com.amazon.speech.ui.PlainTextOutputSpeech;
 import com.amazon.speech.ui.Reprompt;
 import com.amazon.speech.ui.StandardCard;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
- * This class {@link Alexa2EV3Speechlet} implements {@link SpeechletV2} ....
+ * This class {@link Alexa2Ev3Speechlet} implements {@link SpeechletV2} ....
  * 
  * @author kantor
  *
  */
-public class Alexa2EV3Speechlet implements SpeechletV2 {
+public class Alexa2Ev3Speechlet implements SpeechletV2 {
 
-	private static final String STOP_INTENT = "StopIntent";
+	private static final Logger LOG = LoggerFactory.getLogger(Alexa2Ev3Speechlet.class);
 
-	private static final String ARM_COMMAND_INTENT = "ArmCommandIntent";
+	private static final String CRANE_COMMAND_INTENT = "CraneCommandIntent";
 
-	private static final String ARM_STATE_REQUEST_INTENT = "ArmStateRequestIntent";
+	private static final String BRICK_STATE_REQUEST_INTENT = "BrickStateRequestIntent";
 
-	private static final Logger LOG = LoggerFactory.getLogger(Alexa2EV3Speechlet.class);
+	private static final String LAST_COMMAND = "lastCommand";
 
-	/**
-	 * This is the default title that this skill will be using for cards.
-	 */
 	private static final String ALEXA2EV3_CARD_TITLE = "Alexa2Lego Skill";
 
 	private static final String WELCOME_TEXT = "Willkommen. Sag mir dein Kommando.";
 
 	private static final String GOODBYE_TEXT = "Auf Wiedersehen!";
 
-	private static final String HELP_TEXT = "Du kannst sagen zum Beispiel. Arm links zwanzig. Arm rechts. Arm Greifen. Status Batterie.";
+	private static final String HELP_TEXT = "Du kannst sagen zum Beispiel. Links zwanzig. Rechts. Greifen. Status von Batterie.";
 
 	private static final String UNHANDLED_TEXT = "Ich habe Dein Kommando nicht verstanden. Bitte versuche noch ein mal.";
 
 	private static final String ERROR_TEXT = "Es ist ein Fehler aufgetreten. Versuche noch mal, bitte.";
 
-	private static final String MOVE_RESPONSE_TEXT = "okay!";
+	private static final String SAY_AGAIN_TEXT = "Sag bitte noch mal";
+
+	private static final String COMMAND_CONFIRMATION_TEXT = "okay: %s";
 
 	private static final String SLOT_ACTION = "Action";
 
@@ -62,20 +63,21 @@ public class Alexa2EV3Speechlet implements SpeechletV2 {
 
 	private static final String STATE_REPROMT_TEXT = "Du kannst Status abfragen, indem Du zum Beispiel sagst. Status Batterie.";
 
-	private Alexa2EV3SnsClient snsClient;
+	private static final String LAST_INTENT_FAIL_TEXT = "Ich habe noch kein Komando, das ich weiderholen kann";
 
-	private Alexa2EV3IotClient iotClient;
+	private Alexa2Ev3SnsClient snsClient;
 
-	public Alexa2EV3Speechlet() {
+	private Alexa2Ev3IotClient iotClient;
 
-		iotClient = Alexa2EV3IotClient.getInstance();
-		snsClient = new Alexa2EV3SnsClient();
+	public Alexa2Ev3Speechlet() {
+
+		iotClient = Alexa2Ev3IotClient.getInstance();
+		snsClient = new Alexa2Ev3SnsClient();
 	}
 
 	/**
 	 * This is fired when a session is started. Here we could potentially initialize
 	 * a session in our own service for the user, or update a record in a table,
-	 * etc.
 	 * 
 	 * @param speechletRequestEnvelope
 	 *            container for the speechlet request.
@@ -91,9 +93,7 @@ public class Alexa2EV3Speechlet implements SpeechletV2 {
 	}
 
 	/**
-	 * When our skill session is started, a launch event will be triggered. In the
-	 * case of this sample skill, we will return a welcome message, however the sky
-	 * is the limit.
+	 * When our skill session is started, a launch event will be triggered.
 	 * 
 	 * @param speechletRequestEnvelope
 	 *            container for the speechlet request.
@@ -109,93 +109,7 @@ public class Alexa2EV3Speechlet implements SpeechletV2 {
 	}
 
 	/**
-	 * When we receive an intent MoveIntent or StopIntent, this will be triggered.
-	 * This function will handle the processing of that intent based on the
-	 * intentName.
-	 * 
-	 * @param speechletRequestEnvelope
-	 *            container for the speechlet request.
-	 * @return SpeechletResponse a message of our address or an error message
-	 */
-	@Override
-	public SpeechletResponse onIntent(SpeechletRequestEnvelope<IntentRequest> speechletRequestEnvelope) {
-		SpeechletResponse response = null;
-		IntentRequest intentRequest = speechletRequestEnvelope.getRequest();
-		Session session = speechletRequestEnvelope.getSession();
-
-		LOG.info("onIntent requestId={}, sessionId={}", intentRequest.getRequestId(), session.getSessionId());
-
-		Intent intent = intentRequest.getIntent();
-		String intentName = getIntentName(intent);
-
-		LOG.info("Intent received: {}", intentName);
-		if (intentName != null) {
-			switch (intentName) {
-			case ARM_COMMAND_INTENT:
-				try {
-					response = handleArmCommandIntent(intent, session);
-				} catch (Alexa2EV3Exception e) {
-					LOG.error(e.getMessage(), e);
-					response = getAskResponse(ALEXA2EV3_CARD_TITLE, ERROR_TEXT + e.getCause());
-				}
-				break;
-			case ARM_STATE_REQUEST_INTENT:
-				try {
-					response = handleArmStateRequestIntent(intent, session);
-				} catch (Alexa2EV3Exception e) {
-					LOG.error(e.getMessage(), e);
-					response = getAskResponse(ALEXA2EV3_CARD_TITLE, ERROR_TEXT);
-				}
-				break;
-			case STOP_INTENT:
-				response = handleStopIntent(session);
-				break;
-			case "AMAZON.HelpIntent":
-				response = getAskResponse(ALEXA2EV3_CARD_TITLE, HELP_TEXT);
-				break;
-			default:
-				response = getAskResponse(ALEXA2EV3_CARD_TITLE, UNHANDLED_TEXT);
-			}
-		}
-		return response;
-	}
-
-	private SpeechletResponse handleArmCommandIntent(Intent intent, Session session) throws Alexa2EV3Exception {
-		Slot actionSlot = intent.getSlot(SLOT_ACTION);
-		String value = "";
-		if (actionSlot != null) {
-			Alexa2EV3Action action = Alexa2EV3Action.getAction(actionSlot.getValue());
-			if (action != null) {
-				Slot valueSlot = intent.getSlot(SLOT_VALUE);
-				value = valueSlot != null ? valueSlot.getValue() : "";
-				snsClient.sendCommand(action.getActionEn(), value);
-				return getConfirmResponse(action.getActionDe(), value);
-			}
-		}
-		return getAskResponse(ALEXA2EV3_CARD_TITLE, UNHANDLED_TEXT);
-	}
-
-	private SpeechletResponse handleArmStateRequestIntent(Intent intent, Session session) throws Alexa2EV3Exception {
-		Slot parameterSlot = intent.getSlot(SLOT_STATE_PARAMETER);
-		if (parameterSlot != null) {
-
-			Ev3ArmThingState thing = iotClient.sendRequest();
-
-			return getStateDeviceResponse(thing, parameterSlot.getValue());
-		}
-		return getAskResponse(ALEXA2EV3_CARD_TITLE, UNHANDLED_TEXT);
-	}
-
-	private SpeechletResponse handleStopIntent(Session session) {
-		PlainTextOutputSpeech outputSpeech = new PlainTextOutputSpeech();
-		outputSpeech.setText(GOODBYE_TEXT);
-
-		return SpeechletResponse.newTellResponse(outputSpeech);
-	}
-
-	/**
-	 * Similar to onSessionStarted, this method will be fired when the skill session
-	 * has been closed.
+	 * This method will be fired when the skill session has been closed.
 	 * 
 	 * @param speechletRequestEnvelope
 	 *            container for the speechlet request.
@@ -211,20 +125,146 @@ public class Alexa2EV3Speechlet implements SpeechletV2 {
 	}
 
 	/**
-	 * Helper method for retrieving an Ask response with a simple card and reprompt
-	 * included.
+	 * When we receive an intent this will be triggered. This function will handle
+	 * the processing of that intent based on the intentName.
 	 * 
-	 * @param cardTitle
-	 *            Title of the card that you want displayed.
-	 * @param speechText
-	 *            speech text that will be spoken to the user.
-	 * @return the resulting card and speech text.
+	 * @param speechletRequestEnvelope
+	 *            container for the speechlet request.
+	 * @return SpeechletResponse a message of our address or an error message
 	 */
+	@Override
+	public SpeechletResponse onIntent(SpeechletRequestEnvelope<IntentRequest> speechletRequestEnvelope) {
+		SpeechletResponse response;
+		IntentRequest intentRequest = speechletRequestEnvelope.getRequest();
+		Session session = speechletRequestEnvelope.getSession();
+
+		LOG.info("onIntent requestId={}, sessionId={}", intentRequest.getRequestId(), session.getSessionId());
+
+		Intent intent = intentRequest.getIntent();
+		String intentName = getIntentName(intent);
+
+		LOG.info("Intent received: {}", intentName);
+		if (intentName != null) {
+			switch (intentName) {
+			case CRANE_COMMAND_INTENT:
+				try {
+					response = handleCraneCommandIntent(intent, session);
+				} catch (Alexa2Ev3Exception e) {
+					LOG.error(e.getMessage(), e);
+					response = getAskResponse(ALEXA2EV3_CARD_TITLE, ERROR_TEXT + e.getCause());
+				}
+				break;
+			case BRICK_STATE_REQUEST_INTENT:
+				try {
+					response = handleCraneStateRequestIntent(intent, session);
+				} catch (Alexa2Ev3Exception e) {
+					LOG.error(e.getMessage(), e);
+					response = getAskResponse(ALEXA2EV3_CARD_TITLE, ERROR_TEXT);
+				}
+				break;
+			case "AMAZON.StopIntent":
+			case "AMAZON.CancelIntent":
+				response = handleStopIntent(session);
+				break;
+			case "AMAZON.HelpIntent":
+				response = getAskResponse(ALEXA2EV3_CARD_TITLE, HELP_TEXT);
+				break;
+			case "AMAZON.RepeatIntent":
+				try {
+					response = handleRepeatIntent(intent, session);
+				} catch (Alexa2Ev3Exception e) {
+					LOG.error(e.getMessage(), e);
+					response = getAskResponse(ALEXA2EV3_CARD_TITLE, ERROR_TEXT);
+				}
+				break;
+			default:
+				response = getAskResponse(ALEXA2EV3_CARD_TITLE, UNHANDLED_TEXT);
+			}
+		} else {
+			response = getAskResponse(ALEXA2EV3_CARD_TITLE, UNHANDLED_TEXT);
+		}
+		return response;
+	}
+
+	private SpeechletResponse handleRepeatIntent(Intent intent, Session session) throws Alexa2Ev3Exception {
+		SpeechletResponse response = null;
+
+		Alexa2Ev3Command lastCommand = getLastCommand(session);
+		if (lastCommand != null) {
+			snsClient.publish(lastCommand);
+			response = getConfirmResponse(lastCommand.getAction().getDeAction(), lastCommand.getValue());
+		} else {
+			response = getAskResponse(ALEXA2EV3_CARD_TITLE, LAST_INTENT_FAIL_TEXT);
+		}
+		return response;
+	}
+
+	private Alexa2Ev3Command getLastCommand(Session session) throws Alexa2Ev3Exception {
+		Alexa2Ev3Command command = null;
+		try {
+			String foundedCommandJson = session.getAttribute(LAST_COMMAND).toString();
+			command = Alexa2Ev3Command.fromJson(foundedCommandJson);
+		} catch (IOException e) {
+			throw new Alexa2Ev3Exception("getting command failed", e);
+		}
+		return command;
+	}
+
+	private SpeechletResponse handleCraneCommandIntent(Intent intent, Session session) throws Alexa2Ev3Exception {
+
+		Alexa2Ev3Command command = getEV3Command(intent);
+		if (command != null) {
+			try {
+				String commandJson = command.toJson();
+				LOG.info("save last command: " + commandJson);
+				session.setAttribute(LAST_COMMAND, command.toJson());
+			} catch (JsonProcessingException e) {
+				throw new Alexa2Ev3Exception("setting attribute failed", e);
+			}
+			snsClient.publish(command);
+			return getConfirmResponse(command.getAction().getDeAction(), command.getValue());
+		}
+		return getAskResponse(ALEXA2EV3_CARD_TITLE, UNHANDLED_TEXT);
+	}
+
+	private Alexa2Ev3Command getEV3Command(final Intent intent) {
+		Alexa2Ev3Command command = null;
+		Slot actionSlot = intent.getSlot(SLOT_ACTION);
+		if (actionSlot != null) {
+			Alexa2Ev3CommandAction action = Alexa2Ev3CommandAction.getAction(actionSlot.getValue());
+
+			if (action != null) {
+				Slot valueSlot = intent.getSlot(SLOT_VALUE);
+				String value = valueSlot != null ? valueSlot.getValue() : "";
+				command = new Alexa2Ev3Command(action, value);
+			}
+		}
+		return command;
+	}
+
+	private SpeechletResponse handleCraneStateRequestIntent(final Intent intent, final Session session)
+			throws Alexa2Ev3Exception {
+		Slot parameterSlot = intent.getSlot(SLOT_STATE_PARAMETER);
+		if (parameterSlot != null) {
+
+			Ev3ThingState thing = iotClient.getThingState();
+
+			return getStateDeviceResponse(thing, parameterSlot.getValue());
+		}
+		return getAskResponse(ALEXA2EV3_CARD_TITLE, UNHANDLED_TEXT);
+	}
+
+	private SpeechletResponse handleStopIntent(Session session) {
+		PlainTextOutputSpeech outputSpeech = new PlainTextOutputSpeech();
+		outputSpeech.setText(GOODBYE_TEXT);
+
+		return SpeechletResponse.newTellResponse(outputSpeech);
+	}
+
 	private SpeechletResponse getAskResponse(String cardTitle, String speechText) {
 		StandardCard card = getStandardCard(cardTitle, speechText);
 		PlainTextOutputSpeech speech = getPlainTextOutputSpeech(speechText);
-		Reprompt reprompt = getReprompt(speech);
-
+		Reprompt reprompt = createReprompt(SAY_AGAIN_TEXT);
 		return SpeechletResponse.newAskResponse(speech, reprompt, card);
 	}
 
@@ -236,10 +276,9 @@ public class Alexa2EV3Speechlet implements SpeechletV2 {
 	 * @return SpeechletResponse spoken and visual response for the given intent
 	 */
 	private SpeechletResponse getConfirmResponse(String action, String value) {
-		String speechText = MOVE_RESPONSE_TEXT;
+		String speechText = String.format(COMMAND_CONFIRMATION_TEXT, action + (value != null ? value : ""));
 
-		PlainTextOutputSpeech repromtSpeech = getPlainTextOutputSpeech(speechText);
-		Reprompt reprompt = getReprompt(repromtSpeech);
+		Reprompt reprompt = createReprompt(SAY_AGAIN_TEXT);
 		StandardCard card = getStandardCard(ALEXA2EV3_CARD_TITLE, action + (value != null ? " (" + value + ")" : ""));
 
 		PlainTextOutputSpeech speech = getPlainTextOutputSpeech(speechText);
@@ -253,11 +292,9 @@ public class Alexa2EV3Speechlet implements SpeechletV2 {
 	 * @param stateDevice
 	 * @return SpeechletResponse spoken and visual response for the given intent
 	 */
-	private SpeechletResponse getStateDeviceResponse(Ev3ArmThingState thingState, String parameter) {
-		String repromtText = STATE_REPROMT_TEXT;
+	private SpeechletResponse getStateDeviceResponse(Ev3ThingState thingState, String parameter) {
 
-		PlainTextOutputSpeech repromtSpeech = getPlainTextOutputSpeech(repromtText);
-		Reprompt reprompt = getReprompt(repromtSpeech);
+		Reprompt reprompt = createReprompt(STATE_REPROMT_TEXT);
 		String cardText = "";
 		String speachText = "";
 		if (thingState != null) {
@@ -330,7 +367,6 @@ public class Alexa2EV3Speechlet implements SpeechletV2 {
 	private PlainTextOutputSpeech getPlainTextOutputSpeech(String speechText) {
 		PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
 		speech.setText(speechText);
-
 		return speech;
 	}
 
@@ -343,10 +379,10 @@ public class Alexa2EV3Speechlet implements SpeechletV2 {
 	 *            necessary.
 	 * @return Reprompt instance.
 	 */
-	private Reprompt getReprompt(OutputSpeech outputSpeech) {
+	private Reprompt createReprompt(String repormText) {
+		OutputSpeech repromtSpeech = getPlainTextOutputSpeech(repormText);
 		Reprompt reprompt = new Reprompt();
-		reprompt.setOutputSpeech(outputSpeech);
-
+		reprompt.setOutputSpeech(repromtSpeech);
 		return reprompt;
 	}
 

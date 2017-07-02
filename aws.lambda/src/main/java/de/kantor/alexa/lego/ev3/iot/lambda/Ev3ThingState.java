@@ -3,7 +3,7 @@ package de.kantor.alexa.lego.ev3.iot.lambda;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Ev3ArmThingState {
+public class Ev3ThingState {
 
 	public State state = new State();
 
@@ -30,7 +30,7 @@ public class Ev3ArmThingState {
 
 	@Override
 	public String toString() {
-		return "Ev3ArmThingState [state=" + state + "]";
+		return "Ev3ThingState [state=" + state + "]";
 	}
 
 }

@@ -14,7 +14,7 @@ import com.amazon.speech.speechlet.lambda.SpeechletRequestStreamHandler;
  * @author kantor
  *
  */
-public class Alexa2EV3SpeechletRequestStreamHandler extends SpeechletRequestStreamHandler {
+public class Alexa2Ev3SpeechletRequestStreamHandler extends SpeechletRequestStreamHandler {
 
 	private static final Set<String> supportedApplicationIds;
 
@@ -27,7 +27,7 @@ public class Alexa2EV3SpeechletRequestStreamHandler extends SpeechletRequestStre
 		supportedApplicationIds.add(System.getenv("alexa_app_id"));
 	}
 
-	public Alexa2EV3SpeechletRequestStreamHandler() {
-		super(new Alexa2EV3Speechlet(), supportedApplicationIds);
+	public Alexa2Ev3SpeechletRequestStreamHandler() {
+		super(new Alexa2Ev3Speechlet(), supportedApplicationIds);
 	}
 }
