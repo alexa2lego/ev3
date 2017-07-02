@@ -1,8 +1,38 @@
-Hoch
-Runter
-Links
-Rechts
-Greifen
-Loslassen
-Öffnen
-Stopp
+{
+  "intents": [
+    {
+      "intent": "AMAZON.RepeatIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "Action",
+          "type": "LIST_OF_ACTIONS"
+        },
+        {
+          "name": "Value",
+          "type": "AMAZON.NUMBER"
+        }
+      ],
+      "intent": "CraneCommandIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "Parameter",
+          "type": "LIST_OF_PARAMETERS"
+        }
+      ],
+      "intent": "BrickStateRequestIntent"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    },
+    {
+      "intent": "AMAZON.CancelIntent"
+    }
+  ]
+}

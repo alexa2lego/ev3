@@ -1,9 +1,6 @@
-ArmCommandIntent {Action}
-ArmCommandIntent {Action} {Value}
-ArmCommandIntent arm {Action} {Value}
-ArmCommandIntent arm {Action}
-ArmStateRequestIntent status {Parameter}
-ArmStateRequestIntent status von {Parameter}
-StopIntent auf wiedersehen
-StopIntent tschüss
-StopIntent beenden
+CraneCommandIntent {Action}
+CraneCommandIntent {Action} {Value}
+CraneCommandIntent Kran {Action} {Value}
+CraneCommandIntent Kran {Action}
+BrickStateRequestIntent Status {Parameter}
+BrickStateRequestIntent Status von {Parameter}
