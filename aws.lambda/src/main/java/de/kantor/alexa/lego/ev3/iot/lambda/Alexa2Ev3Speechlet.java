@@ -202,8 +202,10 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	private Alexa2Ev3Command getLastCommand(Session session) throws Alexa2Ev3Exception {
 		Alexa2Ev3Command command = null;
 		try {
-			String foundedCommandJson = session.getAttribute(LAST_COMMAND).toString();
-			command = Alexa2Ev3Command.fromJson(foundedCommandJson);
+			Object foundedCommandJson = session.getAttribute(LAST_COMMAND);
+			if (foundedCommandJson != null) {
+				command = Alexa2Ev3Command.fromJson(foundedCommandJson.toString());
+			}
 		} catch (IOException e) {
 			throw new Alexa2Ev3Exception("getting command failed", e);
 		}
