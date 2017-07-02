@@ -114,26 +114,26 @@ var app = Consumer.create({
         console.log("action " + action + ", value: " + value);
 
         switch (action) {
-            case "right":
+            case "RIGHT":
                 doArmRight(value);
                 break;
-            case "left":
+            case "LEFT":
                 doArmLeft(value);
                 break;
-            case "catch":
+            case "CATCH":
                 doArmCatch();
                 break;
-            case "release":
-            case "open":
+            case "RELEASE":
+            case "OPEN":
                 doArmRelease();
                 break;
-            case "stop":
+            case "STOP":
                 stopMotor(motorA);
                 break;
-            case "up":
+            case "UP":
                 doArmUp();
                 break;
-            case "down":
+            case "DOWN":
                 doArmDown();
                 break;
             default:
