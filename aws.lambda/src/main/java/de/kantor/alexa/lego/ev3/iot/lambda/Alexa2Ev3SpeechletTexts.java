@@ -1,17 +1,16 @@
 package de.kantor.alexa.lego.ev3.iot.lambda;
 
 /**
- * This interface  has all texts for {@link Alexa2Ev3Speechlet}
+ * This interface has all texts for {@link Alexa2Ev3Speechlet}
  * 
  * @author kantor
  *
  */
 public interface Alexa2Ev3SpeechletTexts {
 
-
 	static final String WELCOME_TEXT = "Hallo! Zuerst brauche ich die PIN deines Roboters. Sag, zum Beispiel, PIN ist... eins, zwei, drei, vier, fünf.";
 
-    static final String PIN_CORRECT_TEXT = "PIN ist korrekt. Jetzt gib mir Dein Kommando.";
+	static final String PIN_CORRECT_TEXT = "PIN ist korrekt. Jetzt gib mir Dein Kommando.";
 
 	static final String PIN_INCORRECT_TEXT = "PIN ist nicht korrekt. Versuche es noch mal.";
 
@@ -27,11 +26,14 @@ public interface Alexa2Ev3SpeechletTexts {
 
 	static final String SAY_AGAIN_TEXT = "Sag bitte noch mal.";
 
-	 static final String COMMAND_CONFIRMATION_TEXT = "okay: %s.";
+	static final String COMMAND_CONFIRMATION_TEXT = "okay: %s";
 
-	 static final String STATE_REPROMT_TEXT = "Du kannst Status abfragen, indem Du zum Beispiel sagst. Status Batterie.";
+	static final String STATE_REPROMT_TEXT = "Du kannst Status abfragen, indem Du zum Beispiel sagst. Status Batterie.";
 
-	 static final String LAST_INTENT_FAIL_TEXT = "Ich habe noch kein Kommando, das ich weiderholen kann.";
-
+	static final String LAST_INTENT_FAIL_TEXT = "Ich habe noch kein Kommando, das ich wiederholen kann.";
+	
+	static final String CURRENT_VOLTAGE_NOT_FOUND_TEXT= "Die Spannung konnte nicht ermittelt werden.";
+	
+	static final String  CURRENT_VOLTAGE_TEXT= "Die Spannung beträgt %s Volt.";
 
 }

@@ -41,7 +41,9 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 
 	private static final String BRICK_STATE_REQUEST_INTENT = "BrickStateRequestIntent";
 
-	private static final String LAST_COMMAND = "lastCommand";
+	private static final String SESSION_LAST_ATTRIBUTE = "lastCommand";
+
+	private static final String SESSION_PIN_ATTRIBUTE = "PIN";
 
 	private static final String ALEXA2EV3_CARD_TITLE = "Alexa2Lego Skill";
 
@@ -50,7 +52,8 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	private static final String SLOT_VALUE = "Value";
 
 	private static final String SLOT_PIN = "PIN";
-
+	
+	
 	private static final String SLOT_STATE_PARAMETER = "Parameter";
 
 	private Alexa2Ev3SnsClient snsClient;
@@ -107,6 +110,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		SessionEndedRequest sessionEndedRequest = speechletRequestEnvelope.getRequest();
 		Session session = speechletRequestEnvelope.getSession();
 		setPinInSession(session, null);
+		session.setAttribute(SESSION_LAST_ATTRIBUTE, null);
 		LOG.info("onSessionEnded requestId={}, sessionId={}", sessionEndedRequest.getRequestId(),
 				session.getSessionId());
 
@@ -210,7 +214,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	private Alexa2Ev3Command getLastCommand(Session session) throws Alexa2Ev3Exception {
 		Alexa2Ev3Command command = null;
 		try {
-			Object foundedCommandJson = session.getAttribute(LAST_COMMAND);
+			Object foundedCommandJson = session.getAttribute(SESSION_LAST_ATTRIBUTE);
 			if (foundedCommandJson != null) {
 				command = Alexa2Ev3Command.fromJson(foundedCommandJson.toString());
 			}
@@ -221,14 +225,14 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	}
 
 	private SpeechletResponse handleCraneCommandIntent(Intent intent, Session session) throws Alexa2Ev3Exception {
-		String pin = (String) session.getAttribute("PIN");
+		String pin = (String) session.getAttribute(SESSION_PIN_ATTRIBUTE);
 		if (!Strings.isEmpty(pin)) {
 			Alexa2Ev3Command command = getEV3Command(intent);
 			if (command != null) {
 				try {
 					String commandJson = command.toJson();
 					LOG.info("save last command: " + commandJson);
-					session.setAttribute(LAST_COMMAND, command.toJson());
+					session.setAttribute(SESSION_LAST_ATTRIBUTE, command.toJson());
 				} catch (JsonProcessingException e) {
 					throw new Alexa2Ev3Exception("setting attribute failed", e);
 				}
@@ -317,13 +321,11 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 
 				String voltage = thingState.state.reported.battery.get("voltageVolts");
 				if (!Strings.isEmpty(voltage)) {
-					DecimalFormat f = new DecimalFormat("#0.00");
-					String voltageValue = f.format(Double.valueOf(voltage)/1000000);
-					voltageValue = voltageValue.replace(".", " Komma ");
-					speachText = String.format("Die Spannung beträgt %s Volt.", voltageValue);
+					String voltageValue = convertVoltageValue(voltage);
+					speachText = String.format(CURRENT_VOLTAGE_TEXT, voltageValue);
 					cardText = thingState.state.reported.battery.toString();
 				} else {
-					speachText = "Die Spannung konnte nicht ermittelt werden.";
+					speachText = CURRENT_VOLTAGE_NOT_FOUND_TEXT;
 					cardText = speachText + " :-(";
 				}
 				break;
@@ -338,6 +340,13 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		PlainTextOutputSpeech speech = getPlainTextOutputSpeech(speachText);
 
 		return SpeechletResponse.newAskResponse(speech, reprompt, card);
+	}
+
+	private String convertVoltageValue(String voltage) {
+		DecimalFormat f = new DecimalFormat("#0.00");
+		String voltageValue = f.format(Double.valueOf(voltage)/1000000);
+		voltageValue = voltageValue.replace(".", " Komma ");
+		return voltageValue;
 	}
 
 	private SpeechletResponse getPinValidateResponse(Ev3ThingState thingState, String pin, final Session session) {
@@ -365,7 +374,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	}
 
 	private void setPinInSession(final Session session, final String pin) {
-		session.setAttribute("PIN", pin);
+		session.setAttribute(SESSION_PIN_ATTRIBUTE, pin);
 	}
 
 	/**
