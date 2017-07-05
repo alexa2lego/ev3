@@ -7,10 +7,9 @@ var awsIot = require('aws-iot-device-sdk');
 var path = require('path');
 var ev3ThingName = 'EV3Arm';
 var battery = new ev3dev.PowerSupply();
-var update_state_interval_ms= 120000;
-var maximum_reconnect_time_ms=8000;
-var aws_iot_connection_debug=false;
-var clientTokenUpdate;
+var update_state_interval_ms = 60000;
+var maximum_reconnect_time_ms = 8000;
+var aws_iot_connection_debug = false;
 var AWSConfiguration = require('./aws_config.js');
 var pin;
 
@@ -23,6 +22,7 @@ var BatteryInfo = (function () {
         this.maxVoltage = maxVoltage;
         this.minVoltage = minVoltage;
     }
+
     BatteryInfo.prototype.batteryInfo = function () {
         return {
             "CurrentMicroamps": this.measuredCurrent,
@@ -35,7 +35,6 @@ var BatteryInfo = (function () {
     };
     return BatteryInfo;
 }());
-
 
 
 var shadow = awsIot.thingShadow({
@@ -58,15 +57,24 @@ module.exports = {
 
     setupThingShadow: function () {
 
+        function generatePin(){
+            pin = Math.floor(10000 + Math.random() * 90000);
+            console.log("PIN: " + pin);
+        }
+
         shadow.on('connect', function () {
-            shadow.register(ev3ThingName, {}, function () {
-                pin = Math.floor(10000 + Math.random() * 90000);
-                console.log("ev3 thing shadow is registered. PIN: " + pin);
-            });
+                generatePin();
+                initiateState();
+                console.log("ev3 thing shadow is initialized");
         });
 
         shadow.on('timeout', function () {
             console.log('timeout');
+        });
+
+        shadow.on('close', function () {
+            shadow.unregister(ev3ThingName);
+            console.error('close connection' );
         });
 
         shadow.on('error', function (err) {
@@ -77,39 +85,50 @@ module.exports = {
             console.log("thingName: " + thingName + "\n stat: " + stat + "\n clientToken: " + clientToken + "\n stateObject: " + JSON.stringify(stateObject));
         });
 
+        var batteryInfo = new BatteryInfo(
+            battery.measuredCurrent,
+            battery.currentAmps,
+            battery.measuredVoltage,
+            battery.voltageVolts,
+            battery.maxVoltage,
+            battery.minVoltage);
 
-        setInterval(function () {
-            var batteryInfo = new BatteryInfo(
-                battery.measuredCurrent,
-                battery.currentAmps,
-                battery.measuredVoltage,
-                battery.voltageVolts,
-                battery.maxVoltage,
-                battery.minVoltage);
+        var deviceState = {
+            "pin": pin,
+            "battery": batteryInfo
+        };
+        var stateShadow = {
+            "state": {
+                "reported": deviceState
+            }
+        };
 
-            var deviceState = {
-                "pin":pin,
-                "battery": batteryInfo
-            };
-            var stateShadow = {
-                "state": {
-                    "reported": deviceState
-                }
-            };
+        var params = {
+            "thingName": ev3ThingName,
+            "payload": JSON.stringify(stateShadow)
+        };
 
-            var params = {
-                "thingName": ev3ThingName,
-                "payload": JSON.stringify(stateShadow)
-            };
-
-            console.log('\n Updating Shadow:\n', JSON.stringify(params));
-            clientTokenUpdate = shadow.update(ev3ThingName, stateShadow);
+        function updateState() {
+            var clientTokenUpdate = shadow.update(ev3ThingName, stateShadow);
             if (clientTokenUpdate === null) {
                 console.log('update shadow failed, operation still in progress');
             } else {
                 console.log('update shadow successfully: ' + clientTokenUpdate);
             }
+        }
 
+        function initiateState() {
+            shadow.register(ev3ThingName, {
+                persistentSubscribe: false,
+                enableVersioning: false
+            }, function () {
+                updateState();
+            });
+        }
+
+        setInterval(function () {
+            console.log('\n Updating Shadow:\n', JSON.stringify(params));
+            updateState();
         }, update_state_interval_ms);
     }
 };

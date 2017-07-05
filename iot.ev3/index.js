@@ -29,7 +29,6 @@ AWS.config.update({
 
 function armSetup() {
     gyroReset();
-    doArmUp();
     console.log("ev3 is ready");
 }
 
