@@ -11,7 +11,7 @@ var update_state_interval_ms = 60000;
 var maximum_reconnect_time_ms = 8000;
 var aws_iot_connection_debug = false;
 var AWSConfiguration = require('./aws_config.js');
-
+var devicePin;
 
 var BatteryInfo = (function () {
     function BatteryInfo(technology, batteryType, measuredCurrent, currentAmps, measuredVoltage, voltageVolts, maxVoltage, minVoltage) {
@@ -56,15 +56,17 @@ var shadow = awsIot.thingShadow({
 module.exports = {
 
     setupThingShadow: function () {
-        var pin;
+
+        devicePin=generatePin();
 
         function generatePin() {
-            pin = Math.floor(10000 + Math.random() * 90000);
-            console.log("PIN: " + pin);
+            var pinNumber = Math.floor(10000 + Math.random() * 90000);
+            console.log("PIN: " + pinNumber);
+            return pinNumber;
         }
 
         shadow.on('connect', function () {
-            generatePin();
+
             initiateState();
             console.log("ev3 thing shadow is initialized");
         });
@@ -86,37 +88,42 @@ module.exports = {
             console.log("thingName: " + thingName + "\n stat: " + stat + "\n clientToken: " + clientToken + "\n stateObject: " + JSON.stringify(stateObject));
         });
 
-        var batteryInfo = new BatteryInfo(
-            battery.measuredCurrent,
-            battery.currentAmps,
-            battery.measuredVoltage,
-            battery.voltageVolts,
-            battery.maxVoltage,
-            battery.minVoltage);
 
-        var deviceState = {
-            "pin": pin,
-            "battery": batteryInfo
-        };
-
-        var stateShadow = {
-            "state": {
-                "reported": deviceState
-            }
-        };
-
-        var params = {
-            "thingName": ev3ThingName,
-            "payload": JSON.stringify(stateShadow)
-        };
 
         function updateState() {
+
+            var batteryInfo = new BatteryInfo(
+                battery.measuredCurrent,
+                battery.currentAmps,
+                battery.measuredVoltage,
+                battery.voltageVolts,
+                battery.maxVoltage,
+                battery.minVoltage);
+
+            var deviceState = {
+                "battery": batteryInfo,
+                "pin": devicePin
+            };
+
+            var stateShadow = {
+                "state": {
+                    "reported": deviceState
+                }
+            };
+
+            var updatePayload = {
+                "thingName": ev3ThingName,
+                "payload": JSON.stringify(stateShadow)
+            };
+
             var clientTokenUpdate = shadow.update(ev3ThingName, stateShadow);
             if (clientTokenUpdate === null) {
                 console.log('update shadow failed, operation still in progress');
             } else {
                 console.log('update shadow successfully: ' + clientTokenUpdate);
             }
+
+            return updatePayload;
         }
 
         function initiateState() {
@@ -129,8 +136,8 @@ module.exports = {
 
 
             setInterval(function () {
-                console.log('\n Updating Shadow:\n', JSON.stringify(params));
-                updateState();
+                var payload=updateState();
+                console.log('\n Updating Shadow:\n', JSON.stringify(payload));
             }, update_state_interval_ms);
         }
     }
