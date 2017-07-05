@@ -9,7 +9,7 @@ public class Ev3ThingState {
 
 	public static class State {
 
-		public Battery reported = new Battery();
+		public Reported reported = new Reported();
 
 		@Override
 		public String toString() {
@@ -18,14 +18,14 @@ public class Ev3ThingState {
 
 	}
 
-	public static class Battery {
+	public static class Reported {
 		public Map<String, String> battery = new HashMap<>();
-
+		public String pin = "";
 		@Override
 		public String toString() {
-			return battery.toString();
+			return "Reported [battery=" + battery + ", pin=" + pin + "]";
 		}
-
+				
 	}
 
 	@Override

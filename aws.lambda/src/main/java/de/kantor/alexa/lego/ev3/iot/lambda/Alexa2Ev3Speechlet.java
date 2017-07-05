@@ -1,6 +1,7 @@
 package de.kantor.alexa.lego.ev3.iot.lambda;
 
 import java.io.IOException;
+
 import java.text.DecimalFormat;
 
 import org.eclipse.paho.client.mqttv3.util.Strings;
@@ -22,6 +23,7 @@ import com.amazon.speech.ui.PlainTextOutputSpeech;
 import com.amazon.speech.ui.Reprompt;
 import com.amazon.speech.ui.StandardCard;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechletTexts.*;
 
 /**
  * This class {@link Alexa2Ev3Speechlet} implements {@link SpeechletV2} ....
@@ -33,6 +35,8 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Alexa2Ev3Speechlet.class);
 
+	private static final String ENTER_PIN_INTENT = "EnterPinIntent";
+
 	private static final String CRANE_COMMAND_INTENT = "CraneCommandIntent";
 
 	private static final String BRICK_STATE_REQUEST_INTENT = "BrickStateRequestIntent";
@@ -41,29 +45,13 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 
 	private static final String ALEXA2EV3_CARD_TITLE = "Alexa2Lego Skill";
 
-	private static final String WELCOME_TEXT = "Willkommen. Sag mir dein Kommando.";
-
-	private static final String GOODBYE_TEXT = "Auf Wiedersehen!";
-
-	private static final String HELP_TEXT = "Du kannst sagen zum Beispiel. Links zwanzig. Rechts. Greifen. Status von Batterie.";
-
-	private static final String UNHANDLED_TEXT = "Ich habe Dein Kommando nicht verstanden. Bitte versuche noch ein mal.";
-
-	private static final String ERROR_TEXT = "Es ist ein Fehler aufgetreten. Versuche noch mal, bitte.";
-
-	private static final String SAY_AGAIN_TEXT = "Sag bitte noch mal";
-
-	private static final String COMMAND_CONFIRMATION_TEXT = "okay: %s";
-
 	private static final String SLOT_ACTION = "Action";
 
 	private static final String SLOT_VALUE = "Value";
 
+	private static final String SLOT_PIN = "PIN";
+
 	private static final String SLOT_STATE_PARAMETER = "Parameter";
-
-	private static final String STATE_REPROMT_TEXT = "Du kannst Status abfragen, indem Du zum Beispiel sagst. Status Batterie.";
-
-	private static final String LAST_INTENT_FAIL_TEXT = "Ich habe noch kein Komando, das ich weiderholen kann";
 
 	private Alexa2Ev3SnsClient snsClient;
 
@@ -118,7 +106,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	public void onSessionEnded(SpeechletRequestEnvelope<SessionEndedRequest> speechletRequestEnvelope) {
 		SessionEndedRequest sessionEndedRequest = speechletRequestEnvelope.getRequest();
 		Session session = speechletRequestEnvelope.getSession();
-
+		setPinInSession(session, null);
 		LOG.info("onSessionEnded requestId={}, sessionId={}", sessionEndedRequest.getRequestId(),
 				session.getSessionId());
 
@@ -146,12 +134,20 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		LOG.info("Intent received: {}", intentName);
 		if (intentName != null) {
 			switch (intentName) {
+			case ENTER_PIN_INTENT:
+				try {
+					response = handleEnterPinIntent(intent, session);
+				} catch (Alexa2Ev3Exception e) {
+					LOG.error(e.getMessage(), e);
+					response = getAskResponse(ALEXA2EV3_CARD_TITLE, ERROR_TEXT);
+				}
+				break;
 			case CRANE_COMMAND_INTENT:
 				try {
 					response = handleCraneCommandIntent(intent, session);
 				} catch (Alexa2Ev3Exception e) {
 					LOG.error(e.getMessage(), e);
-					response = getAskResponse(ALEXA2EV3_CARD_TITLE, ERROR_TEXT + e.getCause());
+					response = getAskResponse(ALEXA2EV3_CARD_TITLE, ERROR_TEXT);
 				}
 				break;
 			case BRICK_STATE_REQUEST_INTENT:
@@ -186,6 +182,18 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		return response;
 	}
 
+	private SpeechletResponse handleEnterPinIntent(final Intent intent, final Session session)
+			throws Alexa2Ev3Exception {
+		Slot pinSlot = intent.getSlot(SLOT_PIN);
+		if (pinSlot != null) {
+
+			Ev3ThingState thing = iotClient.getThingState();
+
+			return getPinValidateResponse(thing, pinSlot.getValue(), session);
+		}
+		return getAskResponse(ALEXA2EV3_CARD_TITLE, UNHANDLED_TEXT);
+	}
+
 	private SpeechletResponse handleRepeatIntent(Intent intent, Session session) throws Alexa2Ev3Exception {
 		SpeechletResponse response = null;
 
@@ -213,18 +221,22 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	}
 
 	private SpeechletResponse handleCraneCommandIntent(Intent intent, Session session) throws Alexa2Ev3Exception {
-
-		Alexa2Ev3Command command = getEV3Command(intent);
-		if (command != null) {
-			try {
-				String commandJson = command.toJson();
-				LOG.info("save last command: " + commandJson);
-				session.setAttribute(LAST_COMMAND, command.toJson());
-			} catch (JsonProcessingException e) {
-				throw new Alexa2Ev3Exception("setting attribute failed", e);
+		String pin = (String) session.getAttribute("PIN");
+		if (!Strings.isEmpty(pin)) {
+			Alexa2Ev3Command command = getEV3Command(intent);
+			if (command != null) {
+				try {
+					String commandJson = command.toJson();
+					LOG.info("save last command: " + commandJson);
+					session.setAttribute(LAST_COMMAND, command.toJson());
+				} catch (JsonProcessingException e) {
+					throw new Alexa2Ev3Exception("setting attribute failed", e);
+				}
+				snsClient.publish(command);
+				return getConfirmResponse(command.getAction().getDeAction(), command.getValue());
 			}
-			snsClient.publish(command);
-			return getConfirmResponse(command.getAction().getDeAction(), command.getValue());
+		} else {
+			return getAskResponse(ALEXA2EV3_CARD_TITLE, ENTER_PIN_REPROMT_TEXT);
 		}
 		return getAskResponse(ALEXA2EV3_CARD_TITLE, UNHANDLED_TEXT);
 	}
@@ -259,7 +271,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	private SpeechletResponse handleStopIntent(Session session) {
 		PlainTextOutputSpeech outputSpeech = new PlainTextOutputSpeech();
 		outputSpeech.setText(GOODBYE_TEXT);
-
+		setPinInSession(session, null);
 		return SpeechletResponse.newTellResponse(outputSpeech);
 	}
 
@@ -271,14 +283,14 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	}
 
 	/**
-	 * Creates a {@code SpeechletResponse} for the Move intent.
+	 * Creates a {@code SpeechletResponse} for the confirmation.
 	 * 
 	 * @param action
 	 * @param value
 	 * @return SpeechletResponse spoken and visual response for the given intent
 	 */
 	private SpeechletResponse getConfirmResponse(String action, String value) {
-		String speechText = String.format(COMMAND_CONFIRMATION_TEXT, action + (value != null ? value : ""));
+		String speechText = String.format(COMMAND_CONFIRMATION_TEXT, action +  " " + (value != null ? value : ""));
 
 		Reprompt reprompt = createReprompt(SAY_AGAIN_TEXT);
 		StandardCard card = getStandardCard(ALEXA2EV3_CARD_TITLE, action + (value != null ? " (" + value + ")" : ""));
@@ -306,7 +318,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 				String voltage = thingState.state.reported.battery.get("voltageVolts");
 				if (!Strings.isEmpty(voltage)) {
 					DecimalFormat f = new DecimalFormat("#0.00");
-					String voltageValue = f.format(Double.valueOf(voltage));
+					String voltageValue = f.format(Double.valueOf(voltage)/1000000);
 					voltageValue = voltageValue.replace(".", " Komma ");
 					speachText = String.format("Die Spannung beträgt %s Volt.", voltageValue);
 					cardText = thingState.state.reported.battery.toString();
@@ -326,6 +338,34 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		PlainTextOutputSpeech speech = getPlainTextOutputSpeech(speachText);
 
 		return SpeechletResponse.newAskResponse(speech, reprompt, card);
+	}
+
+	private SpeechletResponse getPinValidateResponse(Ev3ThingState thingState, String pin, final Session session) {
+
+		Reprompt reprompt = createReprompt(ENTER_PIN_REPROMT_TEXT);
+		String cardText = "";
+		String speachText = "";
+		if (thingState != null) {
+			String expectedPin = thingState.state.reported.pin;
+			LOG.info("pin:" + pin + ", expectedPin=" + expectedPin);
+			if (!Strings.isEmpty(expectedPin) && !Strings.isEmpty(pin) && pin.equals(expectedPin)) {
+				speachText = PIN_CORRECT_TEXT;
+				cardText = PIN_CORRECT_TEXT;
+				setPinInSession(session, pin);
+			} else {
+				speachText = PIN_INCORRECT_TEXT;
+				cardText = PIN_INCORRECT_TEXT;
+			}
+		}
+		StandardCard card = getStandardCard(ALEXA2EV3_CARD_TITLE, cardText);
+
+		PlainTextOutputSpeech speech = getPlainTextOutputSpeech(speachText);
+
+		return SpeechletResponse.newAskResponse(speech, reprompt, card);
+	}
+
+	private void setPinInSession(final Session session, final String pin) {
+		session.setAttribute("PIN", pin);
 	}
 
 	/**
