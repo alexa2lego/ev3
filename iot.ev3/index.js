@@ -8,11 +8,11 @@ var AWSConfiguration = require('./aws_config.js');
 
 var minAltitude  = 80;
 
-var motorA = new ev3dev.Motor(ev3dev.OUTPUT_A);
-var motorB = new ev3dev.Motor(ev3dev.OUTPUT_B);
-var motorC = new ev3dev.Motor(ev3dev.OUTPUT_C);
-var touchSensor1 = new ev3dev.TouchSensor(ev3dev.INPUT_1);
-var touchSensor2 = new ev3dev.TouchSensor(ev3dev.INPUT_2);
+var motorA = new ev3dev.Motor(ev3dev.OUTPUT_A); //  motor for moving right or left
+var motorB = new ev3dev.Motor(ev3dev.OUTPUT_B); // motor for touching
+var motorC = new ev3dev.Motor(ev3dev.OUTPUT_C); // up, down motor
+var touchSensor1 = new ev3dev.TouchSensor(ev3dev.INPUT_1); // stop sensor for motor A
+var touchSensor2 = new ev3dev.TouchSensor(ev3dev.INPUT_2); // stop sensor for motor C
 var ultraSensor = new ev3dev.UltrasonicSensor(ev3dev.INPUT_3);
 var gyroSensor = new ev3dev.GyroSensor(ev3dev.INPUT_4);
 

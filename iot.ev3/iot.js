@@ -12,12 +12,10 @@ var maximum_reconnect_time_ms=8000;
 var aws_iot_connection_debug=false;
 var clientTokenUpdate;
 var AWSConfiguration = require('./aws_config.js');
-
+var pin;
 
 var BatteryInfo = (function () {
     function BatteryInfo(technology, batteryType, measuredCurrent, currentAmps, measuredVoltage, voltageVolts, maxVoltage, minVoltage) {
-        this.technology = technology;
-        this.batteryType = batteryType;
         this.measuredCurrent = measuredCurrent;
         this.currentAmps = currentAmps;
         this.measuredVoltage = measuredVoltage;
@@ -27,8 +25,6 @@ var BatteryInfo = (function () {
     }
     BatteryInfo.prototype.batteryInfo = function () {
         return {
-            "Technology": this.technology,
-            "Type": this.batteryType,
             "CurrentMicroamps": this.measuredCurrent,
             "CurrentAmps": this.currentAmps,
             "VoltageMicrovolts": this.measuredVoltage,
@@ -39,6 +35,7 @@ var BatteryInfo = (function () {
     };
     return BatteryInfo;
 }());
+
 
 
 var shadow = awsIot.thingShadow({
@@ -63,7 +60,8 @@ module.exports = {
 
         shadow.on('connect', function () {
             shadow.register(ev3ThingName, {}, function () {
-                console.log("ev3 thing shadow is registered");
+                pin = Math.floor(10000 + Math.random() * 90000);
+                console.log("ev3 thing shadow is registered. PIN: " + pin);
             });
         });
 
@@ -71,14 +69,17 @@ module.exports = {
             console.log('timeout');
         });
 
+        shadow.on('error', function (err) {
+            console.error('error:' + err);
+        });
+
         shadow.on('status', function (thingName, stat, clientToken, stateObject) {
             console.log("thingName: " + thingName + "\n stat: " + stat + "\n clientToken: " + clientToken + "\n stateObject: " + JSON.stringify(stateObject));
         });
 
+
         setInterval(function () {
             var batteryInfo = new BatteryInfo(
-                battery.technology,
-                battery.type,
                 battery.measuredCurrent,
                 battery.currentAmps,
                 battery.measuredVoltage,
@@ -86,12 +87,13 @@ module.exports = {
                 battery.maxVoltage,
                 battery.minVoltage);
 
-            var batteryState = {
+            var deviceState = {
+                "pin":pin,
                 "battery": batteryInfo
             };
             var stateShadow = {
                 "state": {
-                    "reported": batteryState
+                    "reported": deviceState
                 }
             };
 
