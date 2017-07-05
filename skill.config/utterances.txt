@@ -1,6 +1,7 @@
 CraneCommandIntent {Action}
 CraneCommandIntent {Action} {Value}
-CraneCommandIntent Kran {Action} {Value}
-CraneCommandIntent Kran {Action}
 BrickStateRequestIntent Status {Parameter}
 BrickStateRequestIntent Status von {Parameter}
+EnterPinIntent PIN ist {PIN}
+EnterPinIntent PIN laut {PIN}
+EnterPinIntent PIN {PIN}

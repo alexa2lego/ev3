@@ -19,6 +19,15 @@
     {
       "slots": [
         {
+          "name": "PIN",
+          "type": "AMAZON.NUMBER"
+        }
+      ],
+      "intent": "EnterPinIntent"
+    },
+    {
+      "slots": [
+        {
           "name": "Parameter",
           "type": "LIST_OF_PARAMETERS"
         }
