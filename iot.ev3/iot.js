@@ -11,7 +11,7 @@ var update_state_interval_ms = 60000;
 var maximum_reconnect_time_ms = 8000;
 var aws_iot_connection_debug = false;
 var AWSConfiguration = require('./aws_config.js');
-var pin;
+
 
 var BatteryInfo = (function () {
     function BatteryInfo(technology, batteryType, measuredCurrent, currentAmps, measuredVoltage, voltageVolts, maxVoltage, minVoltage) {
@@ -56,16 +56,17 @@ var shadow = awsIot.thingShadow({
 module.exports = {
 
     setupThingShadow: function () {
+        var pin;
 
-        function generatePin(){
+        function generatePin() {
             pin = Math.floor(10000 + Math.random() * 90000);
             console.log("PIN: " + pin);
         }
 
         shadow.on('connect', function () {
-                generatePin();
-                initiateState();
-                console.log("ev3 thing shadow is initialized");
+            generatePin();
+            initiateState();
+            console.log("ev3 thing shadow is initialized");
         });
 
         shadow.on('timeout', function () {
@@ -74,7 +75,7 @@ module.exports = {
 
         shadow.on('close', function () {
             shadow.unregister(ev3ThingName);
-            console.error('close connection' );
+            console.error('close connection');
         });
 
         shadow.on('error', function (err) {
@@ -97,6 +98,7 @@ module.exports = {
             "pin": pin,
             "battery": batteryInfo
         };
+
         var stateShadow = {
             "state": {
                 "reported": deviceState
@@ -124,12 +126,13 @@ module.exports = {
             }, function () {
                 updateState();
             });
-        }
 
-        setInterval(function () {
-            console.log('\n Updating Shadow:\n', JSON.stringify(params));
-            updateState();
-        }, update_state_interval_ms);
+
+            setInterval(function () {
+                console.log('\n Updating Shadow:\n', JSON.stringify(params));
+                updateState();
+            }, update_state_interval_ms);
+        }
     }
 };
 
