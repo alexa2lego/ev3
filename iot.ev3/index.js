@@ -5,6 +5,8 @@ var Consumer = require('sqs-consumer');
 var AWS = require('aws-sdk');
 var iot = require('./iot');
 var AWSConfiguration = require('./aws_config.js');
+var mqttClient = require('./mqtt_client');
+var mqttConfiguration= require('./mqtt_config');
 
 var minAltitude  = 80;
 
@@ -19,6 +21,8 @@ var gyroSensor = new ev3dev.GyroSensor(ev3dev.INPUT_4);
 var cancellationMotorA;
 var cancellationMotorC;
 var angle;
+
+var mqtt= mqttClient.setupMqttClient();
 
 
 AWS.config.update({
@@ -104,6 +108,12 @@ function stopMotor(motor) {
     }
 }
 
+function publishCommand(command){
+    mqttClient.sendCommand(command);
+}
+
+
+
 var app = Consumer.create({
     queueUrl: AWSConfiguration.aws_ev3_queue,
     handleMessage: function (message, done) {
@@ -134,6 +144,10 @@ var app = Consumer.create({
                 break;
             case "DOWN":
                 doArmDown();
+                break;
+            case "FORWARDS":
+            case "BACKWARDS":
+                publishCommand(JSON.stringify(msg));
                 break;
             default:
                 console.log("can't do!");
@@ -242,6 +256,8 @@ function on(err) {
 
 
 iot.setupThingShadow();
+
+
 
 initMotors();
 initSensors();

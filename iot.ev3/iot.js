@@ -85,7 +85,7 @@ module.exports = {
         });
 
         shadow.on('status', function (thingName, stat, clientToken, stateObject) {
-            console.log("thingName: " + thingName + "\n stat: " + stat + "\n clientToken: " + clientToken + "\n stateObject: " + JSON.stringify(stateObject));
+            console.log("stat: " + stat + "\n stateObject: " + JSON.stringify(stateObject));
         });
 
 
