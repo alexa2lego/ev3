@@ -14,7 +14,9 @@ public enum Alexa2Ev3CommandAction {
 	DOWN("runter", "down"), 
 	CATCH("greifen", "catch"), 
 	RELEASE("loslassen", "release"), 
-	OPEN("öffnen", "release");
+	OPEN("öffnen", "release"),
+	FORWARDS("geradeaus", "forwards"),
+	BACKWARDS("rückwärts","backwards");
 	// @formatter:on
 
 	private String deAction;
@@ -24,9 +26,13 @@ public enum Alexa2Ev3CommandAction {
 		this.deAction = deAction;
 		this.enAction = enAction;
 	}
+
 	Alexa2Ev3CommandAction(@JsonProperty("action") String deAction) {
 		this.deAction = deAction;
-		this.enAction = Alexa2Ev3CommandAction.getAction(deAction).enAction;
+		Alexa2Ev3CommandAction action = Alexa2Ev3CommandAction.getAction(deAction);
+		if (action != null) {
+			this.enAction = action.enAction;
+		}
 	}
 
 	public String getDeAction() {

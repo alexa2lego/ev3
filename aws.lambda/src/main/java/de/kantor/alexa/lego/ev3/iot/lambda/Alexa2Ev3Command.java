@@ -49,7 +49,7 @@ public class Alexa2Ev3Command {
 		return objectMapper.writeValueAsString(this);
 	}
 
-	public static Alexa2Ev3Command fromJson(String json) throws JsonParseException, JsonMappingException, IOException {
+	public static Alexa2Ev3Command fromJson(String json) throws IOException {
 		return objectMapper.readValue(json, Alexa2Ev3Command.class);
 	}
 
