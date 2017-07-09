@@ -3,7 +3,7 @@
 var ev3dev = require('ev3dev-lang');
 
 
-var minAltitude  = 80;
+var minAltitude = 80;
 
 var motorA = new ev3dev.Motor(ev3dev.OUTPUT_A); //  motor for moving right or left
 var motorB = new ev3dev.Motor(ev3dev.OUTPUT_B); // motor for touching
@@ -15,11 +15,11 @@ var touchSensor2 = new ev3dev.TouchSensor(ev3dev.INPUT_2); // stop sensor for mo
 var ultraSensor = new ev3dev.UltrasonicSensor(ev3dev.INPUT_3);
 var gyroSensor = new ev3dev.GyroSensor(ev3dev.INPUT_4);
 
+var battery = new ev3dev.PowerSupply();
+
 var cancellationMotorA;
 var cancellationMotorC;
 var angle;
-
-
 
 
 function initMotors() {
@@ -80,7 +80,7 @@ function initSensors() {
     ultraSensor.registerEventCallback(function (error, ultraInfo) {
         if (error)
             throw error;
-        if (ultraInfo.lastValue < minAltitude ) {
+        if (ultraInfo.lastValue < minAltitude) {
             clearInterval(cancellationMotorC);
             stopMotor(motorC);
         }
@@ -94,7 +94,7 @@ function initSensors() {
     gyroSensor.registerEventCallback(function (error, ultraInfo) {
         if (error)
             throw error;
-        if (ultraInfo.lastValue < - angle) {
+        if (ultraInfo.lastValue < -angle) {
             clearInterval(cancellationMotorA);
             stopMotor(motorA);
             gyroReset();
@@ -108,16 +108,16 @@ function initSensors() {
 
 }
 
-function getMotorsInfo(){
+function getMotorsInfo() {
     return {
-        "Motor A" : getMotorInfo(motorA),
-        "Motor B" : getMotorInfo(motorB),
-        "Motor C" : getMotorInfo(motorC),
-        "Motor D" : getMotorInfo(motorD),
+        "Motor A": getMotorInfo(motorA),
+        "Motor B": getMotorInfo(motorB),
+        "Motor C": getMotorInfo(motorC),
+        "Motor D": getMotorInfo(motorD),
     };
 }
 
-function getSensorsInfo(){
+function getSensorsInfo() {
     return {
         "Sensor 1": getSensorInfo(touchSensor1),
         "Sensor 2": getSensorInfo(touchSensor2),
@@ -126,22 +126,35 @@ function getSensorsInfo(){
     };
 }
 
-function getMotorInfo(motor){
-    return {
-        "driverName" : motor.driverName,
-        "connected" : motor.connected
-    };
-}
-
-function getSensorInfo(sensor){
-    return {
-        "driverName" : sensor.driverName,
-        "connected" : sensor.connected
+function getMotorInfo(motor) {
+    if (motor.connected) {
+        return {
+            "driverName": motor.driverName,
+            "status": "connected"
+        };
+    } else {
+        return {
+            "status": "disconnected"
+        };
     }
 }
 
+function getSensorInfo(sensor) {
+    if (sensor.connected) {
+        return {
+            "driverName": sensor.driverName,
+            "status": "connected"
+        };
+    } else {
+        return {
+            "status": "disconnected"
+        };
+    }
 
-function gyroReset () {
+}
+
+
+function gyroReset() {
     angle = 0;
     gyroSensor = new ev3dev.GyroSensor(ev3dev.INPUT_4);
 }
@@ -153,6 +166,16 @@ function stopMotor(motor) {
     }
 }
 
+function getBattetyInfo(){
+  return {
+      "measuredCurrent":battery.measuredCurrent,
+      "currentAmps":battery.currentAmps,
+      "measuredVoltage":battery.measuredVoltage,
+      "voltageVolts":battery.voltageVolts,
+      "maxVoltage":battery.maxVoltage,
+      "minVoltage":battery.minVoltage
+  }
+}
 
 
 module.exports = {
@@ -225,18 +248,22 @@ module.exports = {
         motorB.runForDistance(90, 200, motorB.stopActionValues.brake);
     },
 
-    doStopMotors: function (){
+    doStopMotors: function () {
         stopMotor(motorA);
         stopMotor(motorB);
         stopMotor(motorC);
     },
 
-    doCheckMotors: function(){
+    getMotorsState: function () {
         return getMotorsInfo();
     },
 
-    doCheckSensors: function(){
+    getSensorsState: function () {
         return getSensorsInfo();
-    }
-};
+    },
 
+    getBatteryState: function(){
+        return getBattetyInfo();
+    }
+
+};

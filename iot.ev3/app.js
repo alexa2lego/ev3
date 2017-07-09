@@ -7,6 +7,7 @@ var ev3ThingName = 'EV3Arm';
 var awsConfig = require('./aws_config.js');
 var devicePin;
 var robot = require('./robot');
+robot.doSetup();
 
 var shadow = awsIot.thingShadow({
     keyPath: path.join(__dirname, './certs/private.pem.key'),
@@ -35,10 +36,6 @@ shadow.on('connect', function () {
     console.log("shadow initialized");
 });
 
-shadow.on('status', function (thingName, stat, clientToken, stateObject) {
-    handleStatus(thingName, stat, clientToken, stateObject);
-});
-
 shadow.on('message', function (topic, payload) {
     handleMessage(topic, payload);
 });
@@ -58,11 +55,15 @@ shadow.on('error', function (err) {
 });
 
 
+
 function generateState() {
     return {
         state: {
             reported: {
-                "pin": devicePin
+                "pin": devicePin,
+                "motors": robot.getMotorsState(),
+                "sensors":robot.getSensorsState(),
+                "battery" : robot.getBatteryState()
             }
         }
     };
@@ -97,14 +98,6 @@ function handleMessage(topic, message){
 }
 
 
-function handleDelta(thingName, stateObject) {
-    handleCommand(JSON.stringify(stateObject.state.command));
-}
-
-function handleStatus(thingName, stat, clientToken, stateObject) {
-    console.log('got \'' + stat + '\' status on: ' + thingName);
-}
-
 function runCommand(command) {
     var msg = JSON.parse(command);
     var action = msg.action;
@@ -112,12 +105,6 @@ function runCommand(command) {
     console.log("action " + action + ", value: " + value);
     if (action !== null && action != '') {
         switch (action) {
-            case "CHECKMOTORS":
-                robot.doCheckMotors();
-                break;
-            case "CHECKSENSORS":
-                robot.doCheckSensors();
-                break;
             case "RIGHT":
                 robot.doArmRight(value);
                 break;
@@ -148,4 +135,3 @@ function runCommand(command) {
         }
     }
 }
-robot.doSetup();
