@@ -68,14 +68,14 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 
 	private static final String SLOT_STATE_PARAMETER = "Parameter";
 
-	private Alexa2Ev3SnsClient snsClient;
+	// private Alexa2Ev3SnsClient snsClient;
 
 	private Alexa2Ev3IotClient iotClient;
 
 	public Alexa2Ev3Speechlet() {
 
 		iotClient = Alexa2Ev3IotClient.getInstance();
-		snsClient = new Alexa2Ev3SnsClient();
+		// snsClient = new Alexa2Ev3SnsClient();
 	}
 
 	/**
@@ -203,7 +203,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		Slot pinSlot = intent.getSlot(SLOT_PIN);
 		if (pinSlot != null) {
 
-			Ev3ThingState thing = iotClient.getThingState();
+			Ev3Thing thing = iotClient.getThingState();
 
 			return getPinValidateResponse(thing, pinSlot.getValue(), session);
 		}
@@ -215,7 +215,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 
 		Alexa2Ev3Command lastCommand = getLastCommand(session);
 		if (lastCommand != null) {
-			snsClient.publish(lastCommand);
+			iotClient.sendCommand(lastCommand);
 			response = getConfirmResponse(lastCommand.getAction().getDeAction(), lastCommand.getValue());
 		} else {
 			response = getAskResponse(LAST_INTENT_FAIL_TEXT.getDeText());
@@ -248,7 +248,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 				} catch (JsonProcessingException e) {
 					throw new Alexa2Ev3Exception("setting attribute failed", e);
 				}
-				snsClient.publish(command);
+				iotClient.sendCommand(command);
 				return getConfirmResponse(command.getAction().getDeAction(), command.getValue());
 			}
 		} else {
@@ -276,7 +276,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		Slot parameterSlot = intent.getSlot(SLOT_STATE_PARAMETER);
 		if (parameterSlot != null) {
 
-			Ev3ThingState thing = iotClient.getThingState();
+			Ev3Thing thing = iotClient.getThingState();
 
 			return getStateDeviceResponse(thing, parameterSlot.getValue());
 		}
@@ -322,7 +322,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	 * @param stateDevice
 	 * @return SpeechletResponse spoken and visual response for the given intent
 	 */
-	private SpeechletResponse getStateDeviceResponse(Ev3ThingState thingState, String parameter) {
+	private SpeechletResponse getStateDeviceResponse(Ev3Thing thingState, String parameter) {
 
 		Reprompt reprompt = createReprompt(STATE_REPROMT_TEXT.getDeText());
 		String cardText = "";
@@ -361,7 +361,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		return voltageValue;
 	}
 
-	private SpeechletResponse getPinValidateResponse(Ev3ThingState thingState, String pin, final Session session) {
+	private SpeechletResponse getPinValidateResponse(Ev3Thing thingState, String pin, final Session session) {
 
 		Reprompt reprompt = createReprompt(ENTER_PIN_REPROMT_TEXT.getDeText());
 		String cardText = "";

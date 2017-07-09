@@ -3,10 +3,8 @@ package de.kantor.alexa.lego.ev3.iot.lambda;
 import java.io.IOException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -32,7 +30,8 @@ public class Alexa2Ev3Command {
 	 * @param action
 	 * @param value
 	 */
-	public Alexa2Ev3Command(@JsonProperty("action")  Alexa2Ev3CommandAction action, @JsonProperty("value")  String value) {
+	public Alexa2Ev3Command(@JsonProperty("action") Alexa2Ev3CommandAction action,
+			@JsonProperty("value") String value) {
 		this.action = action;
 		this.value = value;
 	}

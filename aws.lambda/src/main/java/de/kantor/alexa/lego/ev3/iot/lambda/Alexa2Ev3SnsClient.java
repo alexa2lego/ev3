@@ -10,7 +10,7 @@ import com.amazonaws.services.sns.model.PublishRequest;
 import com.amazonaws.services.sns.model.PublishResult;
 
 /**
- * {@link Alexa2Ev3SnsClient} creates a command messages and publishts it using
+ * {@link Alexa2Ev3SnsClient} creates a command messages and publish it using
  * Amazon SNS topic.
  * 
  * @author kantor
