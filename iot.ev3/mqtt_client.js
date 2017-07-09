@@ -26,9 +26,9 @@ module.exports = {
     },
 
     sendCommand: function(command){
+        console.log("mqtt command published:" + comamnd);
+        client.publish(mqttConfiguration.topicName , command );
 
-        client.publish(mqttConfiguration.topicName , command ,{qos:2});
-        console.log("command published:" + comamnd);
     }
 
 };

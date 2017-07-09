@@ -1,7 +1,7 @@
 'use strict';
 
 
-var aws = require('aws-sdk');
+//var aws = require('aws-sdk');
 var ev3dev = require('ev3dev-lang');
 var awsIot = require('aws-iot-device-sdk');
 var path = require('path');
@@ -10,7 +10,7 @@ var battery = new ev3dev.PowerSupply();
 var update_state_interval_ms = 60000;
 var maximum_reconnect_time_ms = 8000;
 var aws_iot_connection_debug = false;
-var AWSConfiguration = require('./aws_config.js');
+var awsConfig = require('./aws_config.js');
 var devicePin;
 
 var BatteryInfo = (function () {
@@ -41,8 +41,8 @@ var shadow = awsIot.thingShadow({
     keyPath: path.join(__dirname, './certs/private.pem.key'),
     certPath: path.join(__dirname, './certs/certificate.pem.crt'),
     caPath: path.join(__dirname, './certs/root-CA.crt'),
-    region: AWSConfiguration.aws_region,
-    host: AWSConfiguration.aws_iot_host,
+    region: awsConfig.aws_region,
+    host: awsConfig.aws_iot_host,
     clientId: ev3ThingName,
     maximumReconnectTimeMs: maximum_reconnect_time_ms,
     protocol: 'mqtts',
@@ -52,6 +52,12 @@ var shadow = awsIot.thingShadow({
     sessionToken: ''
 });
 
+function generatePin() {
+    var pinNumber = Math.floor(10000 + Math.random() * 90000);
+    console.log("PIN: " + pinNumber);
+    return pinNumber;
+}
+
 
 module.exports = {
 
@@ -59,33 +65,27 @@ module.exports = {
 
         devicePin=generatePin();
 
-        function generatePin() {
-            var pinNumber = Math.floor(10000 + Math.random() * 90000);
-            console.log("PIN: " + pinNumber);
-            return pinNumber;
-        }
-
         shadow.on('connect', function () {
 
             initiateState();
-            console.log("ev3 thing shadow is initialized");
+            console.log("shadow initialized");
         });
 
         shadow.on('timeout', function () {
-            console.log('timeout');
+            console.log('shadow has timeout');
         });
 
         shadow.on('close', function () {
             shadow.unregister(ev3ThingName);
-            console.error('close connection');
+            console.error('shadow connection closed');
         });
 
         shadow.on('error', function (err) {
-            console.error('error:' + err);
+            console.error('shadow error:' + err);
         });
 
         shadow.on('status', function (thingName, stat, clientToken, stateObject) {
-            console.log("stat: " + stat + "\n stateObject: " + JSON.stringify(stateObject));
+            console.log("shadow stat: " + stat + "\n stateObject: " + JSON.stringify(stateObject));
         });
 
 

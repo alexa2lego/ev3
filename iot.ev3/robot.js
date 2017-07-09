@@ -1,9 +1,7 @@
 'use strict';
 
 var ev3dev = require('ev3dev-lang');
-var iotShadow = require('./iotShadow');
-var iotDevice = require('./iotDevice');
-var mqttClient = require('./mqtt_client');
+
 
 var minAltitude  = 80;
 
@@ -19,135 +17,21 @@ var cancellationMotorA;
 var cancellationMotorC;
 var angle;
 
-//mqttClient.setupMqttClient();
-iotShadow.setupThingShadow();
-// var device=iotDevice.setupThingDevice();
-//
-// device.on('message', function (topic, payload) {
-//     console.log('message:', topic, payload.toString());
-//     handleMessage(payload);
-// });
-
-
-function handleMessage  (message) {
-    var msg = JSON.parse(message);
-    var action = msg.action;
-    var value = msg.value;
-    console.log("action " + action + ", value: " + value);
-
-    switch (action) {
-        case "RIGHT":
-            doArmRight(value);
-            break;
-        case "LEFT":
-            doArmLeft(value);
-            break;
-        case "CATCH":
-            doArmCatch();
-            break;
-        case "RELEASE":
-        case "OPEN":
-            doArmRelease();
-            break;
-        case "STOP":
-            stopMotor(motorA);
-            break;
-        case "UP":
-            doArmUp();
-            break;
-        case "DOWN":
-            doArmDown();
-            break;
-        case "FORWARDS":
-        case "BACKWARDS":
-            publishCommand(JSON.stringify(msg));
-            break;
-        default:
-            console.log("can't do!");
-    }
-}
-
-
-
 function armSetup() {
     gyroReset();
     console.log("ev3 is ready");
 }
 
-function doArmRight() {
-    if (!touchSensor1.isPressed) {
-        console.log("arm is moving right ");
-        cancellationMotorA = setInterval(function () {
-            motorA.start(300, motorA.stopActionValues.brake);
-        }, 100);
-    } else {
-        console.log("arm cannot move right");
-    }
-}
-
-
-function doArmLeft(anAngle) {
-    if (anAngle !== null) {
-        console.log("arm is moving left " + anAngle + " grad");
-        angle = anAngle;
-        gyroReset();
-        cancellationMotorA = setInterval(function () {
-            motorA.start(-200, motorA.stopActionValues.brake);
-        }, 100);
-    }
-    else {
-        console.log("arm is moving left");
-        motorA.runForDistance(-180, 200, motorA.stopActionValues.brake);
-    }
-}
-
-function doArmUp() {
-    if (!touchSensor2.isPressed) {
-        console.log("arm is moving up");
-        cancellationMotorC = setInterval(function () {
-            motorC.start(-300, motorC.stopActionValues.brake);
-        }, 100);
-    } else {
-        console.log("arm cannot move up");
-    }
-}
-
-function doArmDown() {
-    if (ultraSensor.getValue(0) >= minAltitude ) {
-        console.log("arm is moving down");
-        cancellationMotorC = setInterval(function () {
-            motorC.start(300, motorC.stopActionValues.brake);
-        }, 100);
-    } else {
-        console.log("arm cannot move down. Ultrasensor value: " + ultraSensor.getValue(0));
-    }
-}
-
-
-function doArmCatch() {
-    console.log("arm is catching");
-    motorB.runForDistance(-90, 200, motorB.stopActionValues.brake);
-}
-
-function doArmRelease() {
-    console.log("arm is releasing");
-    motorB.runForDistance(90, 200, motorB.stopActionValues.brake);
-}
-
-function gyroReset(){
+function gyroReset () {
     angle = 0;
     gyroSensor = new ev3dev.GyroSensor(ev3dev.INPUT_4);
 }
-
 function stopMotor(motor) {
     if (motor.isRunning) {
         motor.sendCommand(motor.commandValues.stop);
         console.log("motor stopped");
     }
 }
-
-
-
 
 function initMotors() {
     if (!motorA.connected) {
@@ -236,19 +120,79 @@ function initSensors() {
 
 }
 
-function on(err) {
-    console.log(err.message);
-}
+module.exports = {
 
-function publishCommand(command){
-    mqttClient.sendCommand(command);
-}
-
-
+    setup: function () {
+        initMotors();
+        initSensors();
+        armSetup();
+    },
 
 
-initMotors();
-initSensors();
-armSetup();
+    doArmRight: function () {
+        if (!touchSensor1.isPressed) {
+            console.log("arm is moving right ");
+            cancellationMotorA = setInterval(function () {
+                motorA.start(300, motorA.stopActionValues.brake);
+            }, 100);
+        } else {
+            console.log("arm cannot move right");
+        }
+    },
 
+
+    doArmLeft: function (anAngle) {
+        if (anAngle !== null) {
+            console.log("arm is moving left " + anAngle + " grad");
+            angle = anAngle;
+            gyroReset();
+            cancellationMotorA = setInterval(function () {
+                motorA.start(-200, motorA.stopActionValues.brake);
+            }, 100);
+        }
+        else {
+            console.log("arm is moving left");
+            motorA.runForDistance(-180, 200, motorA.stopActionValues.brake);
+        }
+    },
+
+    doArmUp: function () {
+        if (!touchSensor2.isPressed) {
+            console.log("arm is moving up");
+            cancellationMotorC = setInterval(function () {
+                motorC.start(-300, motorC.stopActionValues.brake);
+            }, 100);
+        } else {
+            console.log("arm cannot move up");
+        }
+    },
+
+    doArmDown: function () {
+        if (ultraSensor.getValue(0) >= minAltitude) {
+            console.log("arm is moving down");
+            cancellationMotorC = setInterval(function () {
+                motorC.start(300, motorC.stopActionValues.brake);
+            }, 100);
+        } else {
+            console.log("arm cannot move down. Ultrasensor value: " + ultraSensor.getValue(0));
+        }
+    },
+
+
+    doArmCatch: function () {
+        console.log("arm is catching");
+        motorB.runForDistance(-90, 200, motorB.stopActionValues.brake);
+    },
+
+    doArmRelease: function () {
+        console.log("arm is releasing");
+        motorB.runForDistance(90, 200, motorB.stopActionValues.brake);
+    },
+    doStopMotors: function (){
+        stopMotor(motorA);
+        stopMotor(motorB);
+        stopMotor(motorC);
+    }
+
+};
 
