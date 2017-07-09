@@ -9,6 +9,8 @@ public enum Alexa2Ev3SpeechTexts {
 	PIN_CORRECT_TEXT("PIN ist korrekt. Jetzt gib mir Dein Kommando.", ""),
 
 	PIN_INCORRECT_TEXT("PIN ist nicht korrekt. Versuche es noch mal.", ""),
+	
+	DEVICE_INACTIVE("Der Roboter scheint nicht aktiv zu sein",""),
 
 	ENTER_PIN_REPROMT_TEXT(
 			"Bitte gib mir die beim Start Deines Robotes generierte PIN. Sag. PIN ist. Und dann die fünfstellige Nummer, Ziffer für Ziffer.", ""),

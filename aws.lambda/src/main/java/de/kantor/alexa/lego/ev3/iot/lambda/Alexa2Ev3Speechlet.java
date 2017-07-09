@@ -3,6 +3,7 @@ package de.kantor.alexa.lego.ev3.iot.lambda;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.COMMAND_CONFIRMATION_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.CURRENT_VOLTAGE_NOT_FOUND_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.CURRENT_VOLTAGE_TEXT;
+import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.DEVICE_INACTIVE;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.ENTER_PIN_REPROMT_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.ERROR_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.GOODBYE_TEXT;
@@ -203,11 +204,19 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		Slot pinSlot = intent.getSlot(SLOT_PIN);
 		if (pinSlot != null) {
 
-			Ev3Thing thing = iotClient.getThingState();
-
-			return getPinValidateResponse(thing, pinSlot.getValue(), session);
+			String devicePin = iotClient.getDevicePin();
+			String pinToValidate = pinSlot.getValue();
+			if (Strings.isEmpty(devicePin)) {
+				return getAskResponse(DEVICE_INACTIVE.getDeText());
+			}
+			LOG.info("pin:" + pinToValidate + ", expectedPin=" + devicePin);
+			boolean isPinValid = !Strings.isEmpty(pinToValidate) && pinToValidate.equals(devicePin);
+			if (isPinValid) {
+				setPinInSession(session, pinToValidate);
+			}
+			return getPinValidateResponse(isPinValid, session);
 		}
-		return getAskResponse(UNHANDLED_TEXT.getDeText());
+		return getAskResponse(ERROR_TEXT.getDeText());
 	}
 
 	private SpeechletResponse handleRepeatIntent(Session session) throws Alexa2Ev3Exception {
@@ -265,7 +274,10 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 
 			if (action != null) {
 				Slot valueSlot = intent.getSlot(SLOT_VALUE);
-				String value = valueSlot != null ? valueSlot.getValue() : "";
+				String value = " ";
+				if (valueSlot != null && valueSlot.getValue() != null) {
+					value = valueSlot.getValue();
+				}
 				command = new Alexa2Ev3Command(action, value);
 			}
 		}
@@ -361,22 +373,17 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		return voltageValue;
 	}
 
-	private SpeechletResponse getPinValidateResponse(Ev3Thing thingState, String pin, final Session session) {
+	private SpeechletResponse getPinValidateResponse(boolean isPinValid, final Session session) {
 
 		Reprompt reprompt = createReprompt(ENTER_PIN_REPROMT_TEXT.getDeText());
 		String cardText = "";
 		String speachText = "";
-		if (thingState != null) {
-			String expectedPin = thingState.state.reported.pin;
-			LOG.info("pin:" + pin + ", expectedPin=" + expectedPin);
-			if (!Strings.isEmpty(expectedPin) && !Strings.isEmpty(pin) && pin.equals(expectedPin)) {
-				speachText = PIN_CORRECT_TEXT.getDeText();
-				cardText = PIN_CORRECT_TEXT.getDeText();
-				setPinInSession(session, pin);
-			} else {
-				speachText = PIN_INCORRECT_TEXT.getDeText();
-				cardText = PIN_INCORRECT_TEXT.getDeText();
-			}
+		if (isPinValid) {
+			speachText = PIN_CORRECT_TEXT.getDeText();
+			cardText = PIN_CORRECT_TEXT.getDeText();
+		} else {
+			speachText = PIN_INCORRECT_TEXT.getDeText();
+			cardText = PIN_INCORRECT_TEXT.getDeText();
 		}
 		StandardCard card = getStandardCard(ALEXA2EV3_CARD_TITLE, cardText);
 
