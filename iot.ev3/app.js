@@ -35,12 +35,12 @@ shadow.on('connect', function () {
     console.log("shadow initialized");
 });
 
-shadow.on('status', function(thingName, stat, clientToken, stateObject) {
+shadow.on('status', function (thingName, stat, clientToken, stateObject) {
     handleStatus(thingName, stat, clientToken, stateObject);
 });
 
-shadow.on('delta', function(thingName, stateObject) {
-    handleDelta(thingName, stateObject);
+shadow.on('message', function (topic, payload) {
+    handleMessage(topic, payload);
 });
 
 
@@ -57,9 +57,6 @@ shadow.on('error', function (err) {
     console.error('shadow error:' + err);
 });
 
-shadow.on('status', function (thingName, stat, clientToken, stateObject) {
-    console.log("shadow stat: " + stat + "\n stateObject: " + JSON.stringify(stateObject));
-});
 
 function generateState() {
     return {
@@ -90,55 +87,65 @@ function registerThing() {
         ignoreDeltas: false
     }, function () {
         updateState();
-    })
+    });
+    shadow.subscribe('EV3CommandsTopic');
+}
+
+function handleMessage(topic, message){
+    console.log('got \'' + message + '\' on: ' + topic);
+    runCommand(message);
 }
 
 
 function handleDelta(thingName, stateObject) {
-
-    handleMessage(JSON.stringify(stateObject.state.command));
+    handleCommand(JSON.stringify(stateObject.state.command));
 }
 
 function handleStatus(thingName, stat, clientToken, stateObject) {
     console.log('got \'' + stat + '\' status on: ' + thingName);
 }
 
-function handleMessage  (message) {
-    var msg = JSON.parse(message);
+function runCommand(command) {
+    var msg = JSON.parse(command);
     var action = msg.action;
     var value = msg.value;
     console.log("action " + action + ", value: " + value);
-
-    switch (action) {
-        case "RIGHT":
-            robot.doArmRight(value);
-            break;
-        case "LEFT":
-            robot.doArmLeft(value);
-            break;
-        case "CATCH":
-            robot.doArmCatch();
-            break;
-        case "RELEASE":
-        case "OPEN":
-            robot.doArmRelease();
-            break;
-        case "STOP":
-            robot.doStopMotors();
-            break;
-        case "UP":
-            robot.doArmUp();
-            break;
-        case "DOWN":
-            robot.doArmDown();
-            break;
-        case "FORWARDS":
-        case "BACKWARDS":
-
-            break;
-        default:
-            console.log("can't do!");
+    if (action !== null && action != '') {
+        switch (action) {
+            case "CHECKMOTORS":
+                robot.doCheckMotors();
+                break;
+            case "CHECKSENSORS":
+                robot.doCheckSensors();
+                break;
+            case "RIGHT":
+                robot.doArmRight(value);
+                break;
+            case "LEFT":
+                robot.doArmLeft(value);
+                break;
+            case "CATCH":
+                robot.doArmCatch();
+                break;
+            case "RELEASE":
+            case "OPEN":
+                robot.doArmRelease();
+                break;
+            case "STOP":
+                robot.doStopMotors();
+                break;
+            case "UP":
+                robot.doArmUp();
+                break;
+            case "DOWN":
+                robot.doArmDown();
+                break;
+            case "FORWARDS":
+            case "BACKWARDS":
+                break;
+            default:
+                console.log("can't do!");
+        }
     }
 }
-
-robot.setup();
+robot.doSetup();

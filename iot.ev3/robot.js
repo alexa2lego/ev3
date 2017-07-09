@@ -8,6 +8,8 @@ var minAltitude  = 80;
 var motorA = new ev3dev.Motor(ev3dev.OUTPUT_A); //  motor for moving right or left
 var motorB = new ev3dev.Motor(ev3dev.OUTPUT_B); // motor for touching
 var motorC = new ev3dev.Motor(ev3dev.OUTPUT_C); // up, down motor
+var motorD = new ev3dev.Motor(ev3dev.OUTPUT_D); // not using
+
 var touchSensor1 = new ev3dev.TouchSensor(ev3dev.INPUT_1); // stop sensor for motor A
 var touchSensor2 = new ev3dev.TouchSensor(ev3dev.INPUT_2); // stop sensor for motor C
 var ultraSensor = new ev3dev.UltrasonicSensor(ev3dev.INPUT_3);
@@ -17,45 +19,32 @@ var cancellationMotorA;
 var cancellationMotorC;
 var angle;
 
-function armSetup() {
-    gyroReset();
-    console.log("ev3 is ready");
-}
 
-function gyroReset () {
-    angle = 0;
-    gyroSensor = new ev3dev.GyroSensor(ev3dev.INPUT_4);
-}
-function stopMotor(motor) {
-    if (motor.isRunning) {
-        motor.sendCommand(motor.commandValues.stop);
-        console.log("motor stopped");
-    }
-}
+
 
 function initMotors() {
     if (!motorA.connected) {
         console.error("No motor was found on port A. Please connect a tacho motor to port A and try again.");
-        process.exit(1);
+
     }
     if (!motorB.connected) {
         console.error("No motor was found on port B. Please connect a tacho motor to port B and try again.");
-        process.exit(1);
+
     }
     if (!motorC.connected) {
         console.error("No motor was found on port C. Please connect a tacho motor to port C and try again.");
-        process.exit(1);
+
     }
 }
 
 function initSensors() {
     if (!touchSensor1.connected) {
         console.error("No touch sensor could be found on port 1! Please verify that a touch sensor is plugged in on port 1 and try again.");
-        process.exit(1);
+
     }
     if (!touchSensor2.connected) {
         console.error("No touch sensor could be found on port 2! Please verify that a touch sensor is plugged in on port 2 and try again.");
-        process.exit(1);
+
     }
 
     touchSensor1.registerEventCallback(function (error, touchInfo) {
@@ -106,7 +95,6 @@ function initSensors() {
         if (error)
             throw error;
         if (ultraInfo.lastValue < - angle) {
-            console.log("gyro:" + gyroSensor.getValue(0));
             clearInterval(cancellationMotorA);
             stopMotor(motorA);
             gyroReset();
@@ -120,12 +108,60 @@ function initSensors() {
 
 }
 
+function getMotorsInfo(){
+    return {
+        "Motor A" : getMotorInfo(motorA),
+        "Motor B" : getMotorInfo(motorB),
+        "Motor C" : getMotorInfo(motorC),
+        "Motor D" : getMotorInfo(motorD),
+    };
+}
+
+function getSensorsInfo(){
+    return {
+        "Sensor 1": getSensorInfo(touchSensor1),
+        "Sensor 2": getSensorInfo(touchSensor2),
+        "Sensor 3": getSensorInfo(ultraSensor),
+        "Sensor 4": getSensorInfo(gyroSensor),
+    };
+}
+
+function getMotorInfo(motor){
+    return {
+        "driverName" : motor.driverName,
+        "connected" : motor.connected
+    };
+}
+
+function getSensorInfo(sensor){
+    return {
+        "driverName" : sensor.driverName,
+        "connected" : sensor.connected
+    }
+}
+
+
+function gyroReset () {
+    angle = 0;
+    gyroSensor = new ev3dev.GyroSensor(ev3dev.INPUT_4);
+}
+
+function stopMotor(motor) {
+    if (motor.isRunning) {
+        motor.sendCommand(motor.commandValues.stop);
+        console.log("motor stopped");
+    }
+}
+
+
+
 module.exports = {
 
-    setup: function () {
+    doSetup: function () {
         initMotors();
         initSensors();
-        armSetup();
+        gyroReset();
+        console.log("robot is ready!");
     },
 
 
@@ -188,11 +224,19 @@ module.exports = {
         console.log("arm is releasing");
         motorB.runForDistance(90, 200, motorB.stopActionValues.brake);
     },
+
     doStopMotors: function (){
         stopMotor(motorA);
         stopMotor(motorB);
         stopMotor(motorC);
-    }
+    },
 
+    doCheckMotors: function(){
+        return getMotorsInfo();
+    },
+
+    doCheckSensors: function(){
+        return getSensorsInfo();
+    }
 };
 
