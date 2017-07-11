@@ -59,10 +59,11 @@ public class Alexa2Ev3IotClient {
 	/**
 	 * Retrieves state from the EV3 thing shadow
 	 * 
+	 * @param receiver
 	 * @return object of {@link Ev3Thing}
 	 * @throws Alexa2Ev3Exception
 	 */
-	public Ev3Thing getThingState() throws Alexa2Ev3Exception {
+	public Ev3Thing getThingState(String receiver) throws Alexa2Ev3Exception {
 		try {
 
 			if (iotClient.getConnectionStatus().equals(AWSIotConnectionStatus.DISCONNECTED)) {
@@ -81,16 +82,17 @@ public class Alexa2Ev3IotClient {
 		}
 	}
 
-	public void sendCommand(final Alexa2Ev3Command command) throws Alexa2Ev3Exception {
+	public void sendCommand(String receiver, final Alexa2Ev3Command command) throws Alexa2Ev3Exception {
 		try {
 			if (iotClient.getConnectionStatus().equals(AWSIotConnectionStatus.DISCONNECTED)) {
 				iotClient.connect();
 			}
-			AWSIotMessage message = new AWSIotMessage("EV3CommandsTopic", AWSIotQos.QOS0, command.toJson());
+
+			AWSIotMessage message = new AWSIotMessage(receiver, AWSIotQos.QOS0, command.toJson());
 			iotClient.publish(message);
-			LOG.info(String.format("Command %s sent to device", command.toJson()));
+			LOG.info(String.format("Command %s sent to receiver %s", command.toJson(), receiver));
 		} catch (Exception e) {
-			throw new Alexa2Ev3Exception("command can not be sent to device", e);
+			throw new Alexa2Ev3Exception("command can not be sent to receiver", e);
 		}
 	}
 

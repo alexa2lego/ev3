@@ -4,20 +4,13 @@ public enum Alexa2Ev3SpeechTexts {
 
 	// @formatter:off
 	WELCOME_TEXT(
-			"Hallo! Zuerst brauche ich die PIN deines Roboters. Sag, zum Beispiel, PIN ist... eins, zwei, drei, vier, fünf.",""),
+			"Hallo! Ich schicke Dir Liste aller angemeldeten Geräten mit Ihren Befehlen. Bitte gebe mir Dein Kommando...",""),
 
-	PIN_CORRECT_TEXT("PIN ist korrekt. Jetzt gib mir Dein Kommando.", ""),
-
-	PIN_INCORRECT_TEXT("PIN ist nicht korrekt. Versuche es noch mal.", ""),
-	
 	DEVICE_INACTIVE("Der Roboter scheint nicht aktiv zu sein",""),
 
-	ENTER_PIN_REPROMT_TEXT(
-			"Bitte gib mir die beim Start Deines Robotes generierte PIN. Sag. PIN ist. Und dann die fünfstellige Nummer, Ziffer für Ziffer.", ""),
+	GOODBYE_TEXT("Chao!", ""),
 
-	GOODBYE_TEXT("Auf Wiedersehen!", ""),
-
-	HELP_TEXT("Du kannst sagen zum Beispiel. Links zwanzig. Rechts. Greifen. Status von Batterie.", ""),
+	HELP_TEXT("Wenn Du nicht weisst, wie Du Deine Roboter mit Sprachbefehlen steuern kannst, schaue in die Liste, die ich Dir gerade geschickt habe.", ""),
 
 	UNHANDLED_TEXT("Ich habe Dein Kommando nicht verstanden. Bitte versuche noch ein mal.", ""),
 
@@ -27,9 +20,7 @@ public enum Alexa2Ev3SpeechTexts {
 
 	COMMAND_CONFIRMATION_TEXT("okay: %s", ""),
 
-	STATE_REPROMT_TEXT("Du kannst Status abfragen, indem Du zum Beispiel sagst. Status Batterie.", ""),
-
-	LAST_INTENT_FAIL_TEXT("Ich habe noch kein Kommando, das ich wiederholen kann.", ""),
+	STATE_REPROMT_TEXT("Du kannst Status Deiner Roboter abfragen, indem Du Name vom Roboter und Status sagst", ""),
 
 	CURRENT_VOLTAGE_NOT_FOUND_TEXT("Die Spannung konnte nicht ermittelt werden.", ""),
 

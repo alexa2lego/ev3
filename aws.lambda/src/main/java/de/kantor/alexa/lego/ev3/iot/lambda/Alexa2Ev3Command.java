@@ -20,7 +20,8 @@ public class Alexa2Ev3Command {
 		objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
 
 	}
-	private Alexa2Ev3CommandAction action;
+
+	private String action;
 
 	private String value;
 
@@ -30,13 +31,12 @@ public class Alexa2Ev3Command {
 	 * @param action
 	 * @param value
 	 */
-	public Alexa2Ev3Command(@JsonProperty("action") Alexa2Ev3CommandAction action,
-			@JsonProperty("value") String value) {
+	public Alexa2Ev3Command(@JsonProperty("action") String action, @JsonProperty("value") String value) {
 		this.action = action;
 		this.value = value;
 	}
 
-	public Alexa2Ev3CommandAction getAction() {
+	public String getAction() {
 		return action;
 	}
 
