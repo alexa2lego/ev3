@@ -2,7 +2,6 @@
 
 var ev3dev = require('ev3dev-lang');
 
-
 var minAltitude = 80;
 
 var motorA = new ev3dev.Motor(ev3dev.OUTPUT_A); //  motor for moving right or left
@@ -166,15 +165,15 @@ function stopMotor(motor) {
     }
 }
 
-function getBattetyInfo(){
-  return {
-      "measuredCurrent":battery.measuredCurrent,
-      "currentAmps":battery.currentAmps,
-      "measuredVoltage":battery.measuredVoltage,
-      "voltageVolts":battery.voltageVolts,
-      "maxVoltage":battery.maxVoltage,
-      "minVoltage":battery.minVoltage
-  }
+function getBattetyInfo() {
+    return {
+        "measuredCurrent": battery.measuredCurrent,
+        "currentAmps": battery.currentAmps,
+        "measuredVoltage": battery.measuredVoltage,
+        "voltageVolts": battery.voltageVolts,
+        "maxVoltage": battery.maxVoltage,
+        "minVoltage": battery.minVoltage
+    }
 }
 
 
@@ -190,62 +189,62 @@ module.exports = {
 
     doArmRight: function () {
         if (!touchSensor1.isPressed) {
-            console.log("arm is moving right ");
+            console.log("turning right ");
             cancellationMotorA = setInterval(function () {
-                motorA.start(300, motorA.stopActionValues.brake);
+                motorA.start(motorA.maxSpeed, motorA.stopActionValues.brake);
             }, 100);
         } else {
-            console.log("arm cannot move right");
+            console.log("cannot turn right");
         }
     },
 
 
     doArmLeft: function (anAngle) {
         if (anAngle !== null) {
-            console.log("arm is moving left " + anAngle + " grad");
+            console.log("turning left " + anAngle + " grad");
             angle = anAngle;
             gyroReset();
             cancellationMotorA = setInterval(function () {
-                motorA.start(-200, motorA.stopActionValues.brake);
+                motorA.start(-motorA.maxSpeed, motorA.stopActionValues.brake);
             }, 100);
         }
         else {
-            console.log("arm is moving left");
-            motorA.runForDistance(-180, 200, motorA.stopActionValues.brake);
+            console.log("turning left");
+            motorA.runForDistance(-180, motorA.maxSpeed, motorA.stopActionValues.brake);
         }
     },
 
     doArmUp: function () {
         if (!touchSensor2.isPressed) {
-            console.log("arm is moving up");
+            console.log("moving up");
             cancellationMotorC = setInterval(function () {
-                motorC.start(-300, motorC.stopActionValues.brake);
+                motorC.start(-motorC.maxSpeed, motorC.stopActionValues.brake);
             }, 100);
         } else {
-            console.log("arm cannot move up");
+            console.log("cannot move up");
         }
     },
 
     doArmDown: function () {
         if (ultraSensor.getValue(0) >= minAltitude) {
-            console.log("arm is moving down");
+            console.log("moving down");
             cancellationMotorC = setInterval(function () {
-                motorC.start(300, motorC.stopActionValues.brake);
+                motorC.start(motorC.maxSpeed, motorC.stopActionValues.brake);
             }, 100);
         } else {
-            console.log("arm cannot move down. Ultrasensor value: " + ultraSensor.getValue(0));
+            console.log("cannot move down. Ultrasensor value: " + ultraSensor.getValue(0));
         }
     },
 
 
     doArmCatch: function () {
-        console.log("arm is catching");
-        motorB.runForDistance(-90, 200, motorB.stopActionValues.brake);
+        console.log("catching");
+        motorB.runForDistance(-90, motorB.maxSpeed, motorB.stopActionValues.brake);
     },
 
     doArmRelease: function () {
-        console.log("arm is releasing");
-        motorB.runForDistance(90, 200, motorB.stopActionValues.brake);
+        console.log("releasing");
+        motorB.runForDistance(90, motorB.maxSpeed, motorB.stopActionValues.brake);
     },
 
     doStopMotors: function () {
@@ -262,8 +261,18 @@ module.exports = {
         return getSensorsInfo();
     },
 
-    getBatteryState: function(){
+    getBatteryState: function () {
         return getBattetyInfo();
-    }
+    },
 
+    getCommands: function () {
+        return [
+            {"moveClockweise": "drehen rechts {arc} [Grad] , drehen rechts"},
+            {"moveCounterClockweise": "drehen links {arc} [Grad] , drehen links , drehen links {arc} [Grad]"},
+            {"moveDown": "runtenfahren , runter"},
+            {"moveUp": "hochfahren , hoch"},
+            {"touch": "greifen"},
+            {"release": "öffne , loslassen"}
+        ]
+    }
 };

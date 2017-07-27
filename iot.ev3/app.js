@@ -2,20 +2,19 @@
 
 var awsIot = require('aws-iot-device-sdk');
 var path = require('path');
-var ev3ThingName = 'EV3Arm';
 
-var awsConfig = require('./aws_config.js');
-var devicePin;
-var robot = require('./robot');
-robot.doSetup();
+
+var config = require('./config.js');
+var crane = require('./crane');
+crane.doSetup();
 
 var shadow = awsIot.thingShadow({
     keyPath: path.join(__dirname, './certs/private.pem.key'),
     certPath: path.join(__dirname, './certs/certificate.pem.crt'),
     caPath: path.join(__dirname, './certs/root-CA.crt'),
-    region: awsConfig.aws_region,
-    host: awsConfig.aws_iot_host,
-    clientId: ev3ThingName,
+    region: config.aws_region,
+    host: config.aws_iot_host,
+    clientId: config.thingName,
     maximumReconnectTimeMs: 10000,
     protocol: 'mqtts',
     debug: false,
@@ -24,12 +23,6 @@ var shadow = awsIot.thingShadow({
     sessionToken: ''
 });
 
-
-function generatePin() {
-    var pinNumber = Math.floor(10000 + Math.random() * 90000);
-    console.log("PIN: " + pinNumber);
-    return pinNumber;
-}
 
 shadow.on('connect', function () {
     registerThing();
@@ -46,7 +39,7 @@ shadow.on('timeout', function () {
 });
 
 shadow.on('close', function () {
-    shadow.unregister(ev3ThingName);
+    shadow.unregister(config.thingName);
     console.error('shadow connection closed');
 });
 
@@ -55,80 +48,79 @@ shadow.on('error', function (err) {
 });
 
 
+function registerThing() {
+    shadow.register(config.thingName, {}, function () {
+        onRegisterThing();
+    });
+    shadow.subscribe(config.thingName);
+}
 
-function generateState() {
+
+function onRegisterThing() {
+
+    var updateToken = shadow.update(config.thingName, reportState());
+
+    if (updateToken === null) {
+        console.log('update shadow failed, operation still in progress');
+    } else {
+        console.log('update shadow successfully: ' + updateToken);
+    }
+}
+
+function handleMessage(topic, message) {
+    console.log('got \'' + message + '\' on: ' + topic)
+    runCommand(message);
+}
+
+function reportState() {
     return {
         state: {
-            reported: {
-                "pin": devicePin,
-                "motors": robot.getMotorsState(),
-                "sensors":robot.getSensorsState(),
-                "battery" : robot.getBatteryState()
-            }
+            reported:
+                {
+                    device: {
+                        name: "Kran",
+                        serialnumber: "4711",
+                        status: {
+                            "motors": crane.getMotorsState(),
+                            "sensors": crane.getSensorsState(),
+                            "battery": crane.getBatteryState()
+                        },
+                        commands: crane.getCommands()
+                    }
+                }
+
         }
     };
 }
 
-
-function updateState() {
-
-    var clientTokenUpdate = shadow.update(ev3ThingName, generateState());
-
-    if (clientTokenUpdate === null) {
-        console.log('update shadow failed, operation still in progress');
-    } else {
-        console.log('update shadow successfully: ' + clientTokenUpdate);
-    }
-
-}
-
-function registerThing() {
-    devicePin = generatePin();
-    shadow.register(ev3ThingName, {
-        ignoreDeltas: false
-    }, function () {
-        updateState();
-    });
-    shadow.subscribe('EV3CommandsTopic');
-}
-
-function handleMessage(topic, message){
-    console.log('got \'' + message + '\' on: ' + topic);
-    runCommand(message);
-}
-
-
 function runCommand(command) {
-    var msg = JSON.parse(command);
-    var action = msg.action;
-    var value = msg.value;
+    var cmd = JSON.parse(command);
+    var action = cmd.action;
+    var value = cmd.value;
     console.log("action " + action + ", value: " + value);
     if (action !== null && action != '') {
         switch (action) {
             case "RIGHT":
-                robot.doArmRight(value);
+                crane.doArmRight(value);
                 break;
             case "LEFT":
-                robot.doArmLeft(value);
+                crane.doArmLeft(value);
                 break;
             case "CATCH":
-                robot.doArmCatch();
+                crane.doArmCatch();
                 break;
             case "RELEASE":
             case "OPEN":
-                robot.doArmRelease();
+                crane.doArmRelease();
                 break;
             case "STOP":
-                robot.doStopMotors();
+                crane.doStopMotors();
                 break;
             case "UP":
-                robot.doArmUp();
+                crane.doArmUp();
                 break;
             case "DOWN":
-                robot.doArmDown();
-                break;
-            case "FORWARDS":
-            case "BACKWARDS":
+                crane.doArmDown();
                 break;
             default:
                 console.log("can't do!");

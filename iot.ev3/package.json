@@ -1,8 +1,8 @@
 {
   "name": "alexa2lego-ev3dev-iot",
   "version": "1.0.0",
-  "description": "a module to control an EV3 running ev3dev from JavaScript via Amazon ALexa..",
-  "main": "index.js",
+  "description": "a module to control an EV3 running ev3dev from JavaScript via Amazon Alexa..",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -13,8 +13,7 @@
     "alexa",
     "avs",
     "iot",
-    "aws",
-    "sqs"
+    "aws"
   ],
   "author": "kantor",
   "license": "ISC",
@@ -23,6 +22,5 @@
     "aws-sdk": "^2.76.0",
     "ev3dev-lang": "^1.0.0",
     "mqtt": "^2.9.1",
-    "sqs-consumer": "^3.6.1"
   }
 }
