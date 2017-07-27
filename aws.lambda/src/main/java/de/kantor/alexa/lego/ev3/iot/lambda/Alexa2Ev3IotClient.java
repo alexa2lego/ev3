@@ -1,14 +1,11 @@
 package de.kantor.alexa.lego.ev3.iot.lambda;
 
-import java.io.IOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.iot.client.AWSIotConnectionStatus;
 import com.amazonaws.services.iot.client.AWSIotDevice;
 import com.amazonaws.services.iot.client.AWSIotException;
-import com.amazonaws.services.iot.client.AWSIotMessage;
 import com.amazonaws.services.iot.client.AWSIotMqttClient;
 import com.amazonaws.services.iot.client.AWSIotQos;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -24,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class Alexa2Ev3IotClient {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Alexa2Ev3IotClient.class);
+	private static final long PUBLISH_TIMEOUT = 3000;
 	private static Alexa2Ev3IotClient instance;
 	private static AWSIotDevice device;
 	private static ObjectMapper objectMapper;
@@ -60,10 +58,10 @@ public class Alexa2Ev3IotClient {
 	 * Retrieves state from the EV3 thing shadow
 	 * 
 	 * @param receiver
-	 * @return object of {@link Ev3Thing}
+	 * @return object of {@link Ev3Device}
 	 * @throws Alexa2Ev3Exception
 	 */
-	public Ev3Thing getThingState(String receiver) throws Alexa2Ev3Exception {
+	public Ev3Device getThingState(String receiver) throws Alexa2Ev3Exception {
 		try {
 
 			if (iotClient.getConnectionStatus().equals(AWSIotConnectionStatus.DISCONNECTED)) {
@@ -72,7 +70,7 @@ public class Alexa2Ev3IotClient {
 
 			String shadowState = device.get();
 
-			Ev3Thing thingState = objectMapper.readValue(shadowState, Ev3Thing.class);
+			Ev3Device thingState = objectMapper.readValue(shadowState, Ev3Device.class);
 			// TODO
 			LOG.info(String.format("IoT Device has shadowState: %s", shadowState));
 
@@ -88,31 +86,13 @@ public class Alexa2Ev3IotClient {
 				iotClient.connect();
 			}
 
-			AWSIotMessage message = new AWSIotMessage(receiver, AWSIotQos.QOS0, command.toJson());
-			iotClient.publish(message);
+			Alexa2Ev3IotMessage message = new Alexa2Ev3IotMessage(receiver, AWSIotQos.QOS0, command.toJson());
+
+			iotClient.publish(message, PUBLISH_TIMEOUT);
 			LOG.info(String.format("Command %s sent to receiver %s", command.toJson(), receiver));
 		} catch (Exception e) {
 			throw new Alexa2Ev3Exception("command can not be sent to receiver", e);
 		}
-	}
-
-	public String getDevicePin() throws Alexa2Ev3Exception {
-
-		String devicePin = null;
-		try {
-			if (iotClient.getConnectionStatus().equals(AWSIotConnectionStatus.DISCONNECTED)) {
-				iotClient.connect();
-			}
-
-			String shadowState = device.get();
-
-			Ev3Thing thingState = objectMapper.readValue(shadowState, Ev3Thing.class);
-			devicePin = thingState.state.reported.pin;
-		} catch (AWSIotException | IOException e) {
-			throw new Alexa2Ev3Exception("getting pin failed", e);
-		}
-
-		return devicePin;
 	}
 
 }

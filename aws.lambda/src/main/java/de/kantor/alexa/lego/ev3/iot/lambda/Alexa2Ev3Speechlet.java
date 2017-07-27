@@ -1,8 +1,6 @@
 package de.kantor.alexa.lego.ev3.iot.lambda;
 
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.COMMAND_CONFIRMATION_TEXT;
-import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.CURRENT_VOLTAGE_NOT_FOUND_TEXT;
-import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.CURRENT_VOLTAGE_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.ERROR_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.GOODBYE_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.HELP_TEXT;
@@ -12,6 +10,7 @@ import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.UNHANDLED
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.WELCOME_TEXT;
 
 import java.text.DecimalFormat;
+import java.util.List;
 
 import org.eclipse.paho.client.mqttv3.util.Strings;
 import org.slf4j.Logger;
@@ -42,27 +41,36 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Alexa2Ev3Speechlet.class);
 
-	private static final String COMMAND_INTENT = "GenericIntent";
-
-	private static final String COMMAND_INTENT_WITH_VALUE = "GenericIntentWithValue";
+	private static final String COMMAND_INTENT1 = "GenericIntentA";
+	private static final String COMMAND_INTENT2 = "GenericIntentB";
+	private static final String COMMAND_INTENT3 = "GenericIntentC";
+	private static final String COMMAND_INTENT4 = "GenericIntentD";
+	private static final String COMMAND_INTENT5 = "GenericIntentE";
 
 	private static final String STATE_REQUEST_INTENT = "StateRequestIntent";
 
 	private static final String ALEXA2EV3_CARD_TITLE = "Alexa2Lego Skill";
 
-	private static final String SLOT_RECEIVER = "WordOne";
+	private static final String SLOT_A = "SlotA";
 
-	private static final String SLOT_ACTION = "WordTwo";
+	private static final String SLOT_B = "SlotB";
 
-	private static final String SLOT_DETAIL = "WordThree";
+	private static final String SLOT_C = "SlotC";
 
 	private static final String SLOT_VALUE = "Value";
 
 	private Alexa2Ev3IotClient iotClient;
 
+	private Alexa2Ev3DynamoDBClient dynamoDBClient;
+
+	private List<Ev3Device> devices;
+
 	public Alexa2Ev3Speechlet() {
 
 		iotClient = Alexa2Ev3IotClient.getInstance();
+		dynamoDBClient = Alexa2Ev3DynamoDBClient.getInstance();
+		devices = dynamoDBClient.findAllDevices();
+		LOG.info(devices.toString());
 
 	}
 
@@ -136,8 +144,11 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		LOG.info("Intent received: {}", intentName);
 		if (intentName != null) {
 			switch (intentName) {
-			case COMMAND_INTENT:
-			case COMMAND_INTENT_WITH_VALUE:
+			case COMMAND_INTENT1:
+			case COMMAND_INTENT2:
+			case COMMAND_INTENT3:
+			case COMMAND_INTENT4:
+			case COMMAND_INTENT5:
 				try {
 					response = handleCommandIntent(intent, session);
 				} catch (Alexa2Ev3Exception e) {
@@ -170,11 +181,11 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	}
 
 	private SpeechletResponse handleCommandIntent(Intent intent, Session session) throws Alexa2Ev3Exception {
-		Slot receiverSlot = intent.getSlot(SLOT_RECEIVER);
+		Slot receiverSlot = intent.getSlot(SLOT_A);
 
 		if (receiverSlot != null && !Strings.isEmpty(receiverSlot.getValue())) {
 			String receiver = receiverSlot.getValue();
-			Alexa2Ev3Command command = getEV3Command(intent);
+			Alexa2Ev3Command command = getEV3Command(intent, receiver);
 			if (command != null) {
 				iotClient.sendCommand(receiver, command);
 				return getConfirmResponse(receiver, command.getAction(), command.getValue());
@@ -183,9 +194,9 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		return getAskResponse(UNHANDLED_TEXT.getDeText());
 	}
 
-	private Alexa2Ev3Command getEV3Command(final Intent intent) {
+	private Alexa2Ev3Command getEV3Command(final Intent intent, final String receiver) {
 		Alexa2Ev3Command command = null;
-		Slot actionSlot = intent.getSlot(SLOT_ACTION);
+		Slot actionSlot = intent.getSlot(SLOT_B);
 		if (actionSlot != null) {
 			String action = actionSlot.getValue();
 			if (!Strings.isEmpty(action)) {
@@ -193,11 +204,6 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 				String value = "";
 				if (valueSlot != null && valueSlot.getValue() != null) {
 					value = valueSlot.getValue();
-				} else {
-					valueSlot = intent.getSlot(SLOT_DETAIL);
-					if (valueSlot != null && valueSlot.getValue() != null) {
-						value = valueSlot.getValue();
-					}
 				}
 				command = new Alexa2Ev3Command(action, value);
 			}
@@ -206,10 +212,10 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	}
 
 	private SpeechletResponse handleStateRequestIntent(final Intent intent) throws Alexa2Ev3Exception {
-		Slot receiverSlot = intent.getSlot(SLOT_RECEIVER);
+		Slot receiverSlot = intent.getSlot(SLOT_A);
 		if (receiverSlot != null && receiverSlot.getValue() != null) {
 
-			Ev3Thing thing = iotClient.getThingState(receiverSlot.getValue());
+			Ev3Device thing = iotClient.getThingState(receiverSlot.getValue());
 
 			return getStateDeviceResponse(thing, receiverSlot.getValue());
 		}
@@ -256,24 +262,24 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	 * @param stateDevice
 	 * @return SpeechletResponse spoken and visual response for the given intent
 	 */
-	private SpeechletResponse getStateDeviceResponse(Ev3Thing thingState, String receiver) {
+	private SpeechletResponse getStateDeviceResponse(Ev3Device thingState, String receiver) {
 
 		Reprompt reprompt = createReprompt(STATE_REPROMT_TEXT.getDeText());
 		String cardText = "";
 		String speachText = "";
-		if (thingState != null) {
-
-			// TODO Status zeigen vollständig!
-			String voltage = thingState.state.reported.battery.get("voltageVolts");
-			if (!Strings.isEmpty(voltage)) {
-				String voltageValue = convertVoltageValue(voltage);
-				speachText = String.format(CURRENT_VOLTAGE_TEXT.getDeText(), voltageValue);
-				cardText = thingState.state.reported.battery.toString();
-			} else {
-				speachText = CURRENT_VOLTAGE_NOT_FOUND_TEXT.getDeText();
-				cardText = speachText + " :-(";
-			}
-		}
+		// if (thingState != null) {
+		//
+		// // TODO Status zeigen vollständig!
+		// String voltage = thingState.state.reported.battery.get("voltageVolts");
+		// if (!Strings.isEmpty(voltage)) {
+		// String voltageValue = convertVoltageValue(voltage);
+		// speachText = String.format(CURRENT_VOLTAGE_TEXT.getDeText(), voltageValue);
+		// cardText = thingState.state.reported.battery.toString();
+		// } else {
+		// speachText = CURRENT_VOLTAGE_NOT_FOUND_TEXT.getDeText();
+		// cardText = speachText + " :-(";
+		// }
+		// }
 
 		StandardCard card = getStandardCard(ALEXA2EV3_CARD_TITLE, cardText);
 
