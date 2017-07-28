@@ -108,7 +108,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		Session session = speechletRequestEnvelope.getSession();
 		LOG.info("onLaunch requestId={}, sessionId={}", launchRequest.getRequestId(), session.getSessionId());
 		String infoCardText = getAllCommandsAsText();
-		String devicesText = devices.stream().map(d -> d.getAliasName()).collect(Collectors.joining(","));
+		String devicesText = devices.stream().map(d -> d.getDeviceName()).collect(Collectors.joining(","));
 		return getAskResponseAndInfoCard(String.format(WELCOME_TEXT.getDeText(), devicesText), infoCardText);
 	}
 
@@ -233,7 +233,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		String key = (action + " " + option).toLowerCase();
 
 		Optional<Map<String, String>> oCommand = devices.stream()
-				.filter(d -> d.getAliasName().equalsIgnoreCase(receiver)).map(d -> d.getCommands())
+				.filter(d -> d.getDeviceName().equalsIgnoreCase(receiver)).map(d -> d.getCommands())
 				.filter(c -> c.containsKey(key)).findFirst();
 		if (oCommand.isPresent()) {
 			return new Alexa2Ev3Command(oCommand.get().get(key.trim()), value);

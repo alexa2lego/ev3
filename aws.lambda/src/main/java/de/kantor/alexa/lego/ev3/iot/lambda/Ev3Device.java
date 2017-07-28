@@ -4,15 +4,15 @@ import java.util.Map;
 
 public class Ev3Device {
 	private String serialNumber;
+	private String iotName;
 	private String deviceName;
-	private String aliasName;
 	private Map<String, String> commands;
 
-	public Ev3Device(String serialNumber, String deviceName, String aliasName) {
+	public Ev3Device(String serialNumber, String iotName, String deviceName) {
 		super();
 		this.serialNumber = serialNumber;
+		this.iotName = iotName;
 		this.deviceName = deviceName;
-		this.aliasName = aliasName;
 	}
 
 	public String getSerialNumber() {
@@ -23,20 +23,20 @@ public class Ev3Device {
 		this.serialNumber = serialNumber;
 	}
 
+	public String getIotName() {
+		return iotName;
+	}
+
+	public void setIotName(String iotName) {
+		this.iotName = iotName;
+	}
+
 	public String getDeviceName() {
 		return deviceName;
 	}
 
 	public void setDeviceName(String deviceName) {
 		this.deviceName = deviceName;
-	}
-
-	public String getAliasName() {
-		return aliasName;
-	}
-
-	public void setAliasName(String aliasName) {
-		this.aliasName = aliasName;
 	}
 
 	public Map<String, String> getCommands() {
@@ -49,7 +49,7 @@ public class Ev3Device {
 
 	@Override
 	public String toString() {
-		return "Ev3Device [serialNumber=" + serialNumber + ", deviceName=" + deviceName + ", aliasName=" + aliasName
+		return "Ev3Device [serialNumber=" + serialNumber + ", deviceName=" + deviceName + ", iotName=" + iotName
 				+ ", commands=" + commands + "]";
 	}
 
