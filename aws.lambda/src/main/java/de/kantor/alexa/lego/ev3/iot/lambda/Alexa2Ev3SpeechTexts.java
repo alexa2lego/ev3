@@ -4,15 +4,17 @@ public enum Alexa2Ev3SpeechTexts {
 
 	// @formatter:off
 	WELCOME_TEXT(
-			"Hallo! Ich schicke Dir Liste aller angemeldeten Geräten mit Ihren Befehlen. Bitte gebe mir Dein Kommando...",""),
+			"Hallo! Du kannst folgende Geräte per Sprache steuern: %s. Ich schicke Dir Liste von allen möglichen Befehlen. Bitte gebe mir Dein Kommando...",""),
 
 	DEVICE_INACTIVE("Der Roboter scheint nicht aktiv zu sein",""),
 
 	GOODBYE_TEXT("Chao!", ""),
 
-	HELP_TEXT("Wenn Du nicht weisst, wie Du Deine Roboter mit Sprachbefehlen steuern kannst, schaue in die Liste, die ich Dir gerade geschickt habe.", ""),
+	HELP_TEXT("Wenn Du nicht weisst, wie Du Deine Roboter mit Sprachbefehlen steuern kannst, schaue in die Liste, die ich Dir geschickt habe.", ""),
 
-	UNHANDLED_TEXT("Ich habe Dein Kommando nicht verstanden. Bitte versuche noch ein mal.", ""),
+	UNHANDLED_TEXT("Ich habe Dein Kommando nicht verstanden. Bitte versuche es noch ein mal.", ""),
+
+	COMMAND_MISUNDERSTOOD_TEXT("Dein Kommando: %s habe ich nicht verstanden. Bitte versuche es noch ein mal.", ""),
 
 	ERROR_TEXT("Es ist ein Fehler aufgetreten. Versuche noch mal, bitte.", ""),
 

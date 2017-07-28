@@ -1,6 +1,7 @@
 package de.kantor.alexa.lego.ev3.iot.lambda;
 
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.COMMAND_CONFIRMATION_TEXT;
+import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.COMMAND_MISUNDERSTOOD_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.ERROR_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.GOODBYE_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.HELP_TEXT;
@@ -11,6 +12,9 @@ import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.WELCOME_T
 
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.eclipse.paho.client.mqttv3.util.Strings;
 import org.slf4j.Logger;
@@ -49,13 +53,13 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 
 	private static final String STATE_REQUEST_INTENT = "StateRequestIntent";
 
-	private static final String ALEXA2EV3_CARD_TITLE = "Alexa2Lego Skill";
+	private static final String ALEXA2EV3_CARD_TITLE = "Alexa2Robot";
 
-	private static final String SLOT_A = "SlotA";
+	private static final String SLOT_RECEIVER = "SlotA";
 
-	private static final String SLOT_B = "SlotB";
+	private static final String SLOT_ACTION = "SlotB";
 
-	private static final String SLOT_C = "SlotC";
+	private static final String SLOT_OPTION = "SlotC";
 
 	private static final String SLOT_VALUE = "Value";
 
@@ -67,10 +71,10 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 
 	public Alexa2Ev3Speechlet() {
 
-		iotClient = Alexa2Ev3IotClient.getInstance();
 		dynamoDBClient = Alexa2Ev3DynamoDBClient.getInstance();
 		devices = dynamoDBClient.findAllDevices();
 		LOG.info(devices.toString());
+		iotClient = Alexa2Ev3IotClient.getInstance(devices);
 
 	}
 
@@ -103,8 +107,14 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		LaunchRequest launchRequest = speechletRequestEnvelope.getRequest();
 		Session session = speechletRequestEnvelope.getSession();
 		LOG.info("onLaunch requestId={}, sessionId={}", launchRequest.getRequestId(), session.getSessionId());
+		String infoCardText = getAllCommandsAsText();
+		String devicesText = devices.stream().map(d -> d.getAliasName()).collect(Collectors.joining(","));
+		return getAskResponseAndInfoCard(String.format(WELCOME_TEXT.getDeText(), devicesText), infoCardText);
+	}
 
-		return getAskResponse(WELCOME_TEXT.getDeText());
+	private String getAllCommandsAsText() {
+		// TODO TEXT formatieren!
+		return devices.toString();
 	}
 
 	/**
@@ -181,38 +191,59 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	}
 
 	private SpeechletResponse handleCommandIntent(Intent intent, Session session) throws Alexa2Ev3Exception {
-		Slot receiverSlot = intent.getSlot(SLOT_A);
+		Slot receiverSlot = intent.getSlot(SLOT_RECEIVER);
 
 		if (receiverSlot != null && !Strings.isEmpty(receiverSlot.getValue())) {
 			String receiver = receiverSlot.getValue();
-			Alexa2Ev3Command command = getEV3Command(intent, receiver);
+			Slot actionSlot = intent.getSlot(SLOT_ACTION);
+			Alexa2Ev3Command command = null;
+			String action = "";
+			String option = "";
+			String value = "";
+			if (actionSlot != null) {
+				action = actionSlot.getValue();
+				if (!Strings.isEmpty(action)) {
+					Slot optionSlot = intent.getSlot(SLOT_OPTION);
+
+					if (optionSlot != null && optionSlot.getValue() != null) {
+						option = optionSlot.getValue();
+					}
+					Slot valueSlot = intent.getSlot(SLOT_VALUE);
+
+					if (valueSlot != null && valueSlot.getValue() != null) {
+						value = valueSlot.getValue();
+					}
+					command = generateEv3Command(receiver, action, option, value);
+				}
+			}
+
 			if (command != null) {
 				iotClient.sendCommand(receiver, command);
 				return getConfirmResponse(receiver, command.getAction(), command.getValue());
+			} else {
+				return getAskResponse(
+						String.format(COMMAND_MISUNDERSTOOD_TEXT.getDeText(), receiver + " " + action + " " + option));
 			}
 		}
 		return getAskResponse(UNHANDLED_TEXT.getDeText());
 	}
 
-	private Alexa2Ev3Command getEV3Command(final Intent intent, final String receiver) {
-		Alexa2Ev3Command command = null;
-		Slot actionSlot = intent.getSlot(SLOT_B);
-		if (actionSlot != null) {
-			String action = actionSlot.getValue();
-			if (!Strings.isEmpty(action)) {
-				Slot valueSlot = intent.getSlot(SLOT_VALUE);
-				String value = "";
-				if (valueSlot != null && valueSlot.getValue() != null) {
-					value = valueSlot.getValue();
-				}
-				command = new Alexa2Ev3Command(action, value);
-			}
+	private Alexa2Ev3Command generateEv3Command(final String receiver, final String action, final String option,
+			final String value) {
+		String key = (action + " " + option).toLowerCase();
+
+		Optional<Map<String, String>> oCommand = devices.stream()
+				.filter(d -> d.getAliasName().equalsIgnoreCase(receiver)).map(d -> d.getCommands())
+				.filter(c -> c.containsKey(key)).findFirst();
+		if (oCommand.isPresent()) {
+			return new Alexa2Ev3Command(oCommand.get().get(key.trim()), value);
 		}
-		return command;
+		LOG.info("cannot generate Ev3Command for receiver: " + receiver + " and key: " + key);
+		return null;
 	}
 
 	private SpeechletResponse handleStateRequestIntent(final Intent intent) throws Alexa2Ev3Exception {
-		Slot receiverSlot = intent.getSlot(SLOT_A);
+		Slot receiverSlot = intent.getSlot(SLOT_RECEIVER);
 		if (receiverSlot != null && receiverSlot.getValue() != null) {
 
 			Ev3Device thing = iotClient.getThingState(receiverSlot.getValue());
@@ -230,6 +261,13 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 
 	private SpeechletResponse getAskResponse(String speechText) {
 		StandardCard card = getStandardCard(ALEXA2EV3_CARD_TITLE, speechText);
+		PlainTextOutputSpeech speech = getPlainTextOutputSpeech(speechText);
+		Reprompt reprompt = createReprompt(SAY_AGAIN_TEXT.getDeText());
+		return SpeechletResponse.newAskResponse(speech, reprompt, card);
+	}
+
+	private SpeechletResponse getAskResponseAndInfoCard(String speechText, String cardInfoText) {
+		StandardCard card = getStandardCard(ALEXA2EV3_CARD_TITLE, cardInfoText);
 		PlainTextOutputSpeech speech = getPlainTextOutputSpeech(speechText);
 		Reprompt reprompt = createReprompt(SAY_AGAIN_TEXT.getDeText());
 		return SpeechletResponse.newAskResponse(speech, reprompt, card);
