@@ -78,8 +78,8 @@ function reportState() {
             reported:
                 {
                     device: {
-                        name: "Kran",
-                        serialnumber: "4711",
+                        deviceName: "Kran",
+                        serialNumber: "abc12345Z",
                         status: {
                             "motors": crane.getMotorsState(),
                             "sensors": crane.getSensorsState(),

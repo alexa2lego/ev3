@@ -267,12 +267,12 @@ module.exports = {
 
     getCommands: function () {
         return [
-            {"moveClockweise": "drehen rechts {arc} [Grad] , drehen rechts"},
-            {"moveCounterClockweise": "drehen links {arc} [Grad] , drehen links , drehen links {arc} [Grad]"},
-            {"moveDown": "runtenfahren , runter"},
-            {"moveUp": "hochfahren , hoch"},
-            {"touch": "greifen"},
-            {"release": "öffne , loslassen"}
+            {"RIGHT": "drehe rechts {arc} [Grad] , drehe rechts"},
+            {"LEFT": "drehe links {arc} [Grad], drehe links"},
+            {"DOWN": "fahre runter"},
+            {"UP": "fahre hoch"},
+            {"CATCH": "greife es"},
+            {"RELEASE": "öffne es , lasse los"}
         ]
     }
 };
