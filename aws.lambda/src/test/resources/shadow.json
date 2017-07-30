@@ -1,0 +1,88 @@
+{
+	"state": 
+	{
+		"reported": 
+		{
+			"device": 
+			{
+				"status": 
+				{
+					"motors": 
+					{
+						"Motor A": 
+						{
+							"driverName": "lego-ev3-l-motor",
+							"status": "connected"
+						},
+
+						"Motor B": 
+						{
+							"driverName": "lego-ev3-m-motor",
+							"status": "connected"
+						},
+
+						"Motor C": 
+						{
+							"driverName": "lego-ev3-l-motor",
+							"status": "connected"
+						},
+
+						"Motor D": 
+						{
+							"status": "disconnected"
+						}
+					},
+
+					"sensors": 
+					{
+						"Sensor 1": 
+						{
+							"driverName": "lego-ev3-touch",
+							"status": "connected"
+						},
+
+						"Sensor 2": 
+						{
+							"driverName": "lego-ev3-touch",
+							"status": "connected"
+						},
+
+						"Sensor 3": 
+						{
+							"driverName": "lego-ev3-us",
+							"status": "connected"
+						},
+
+						"Sensor 4": 
+						{
+							"driverName": "lego-ev3-gyro",
+							"status": "connected"
+						}
+					},
+
+					"battery": 
+					{
+						"measuredCurrent": 201333,
+						"currentAmps": 0.201333,
+						"measuredVoltage": 7390066,
+						"voltageVolts": 7.390066,
+						"maxVoltage": 7500000,
+						"minVoltage": 7100000
+					}
+				},
+
+				"commands": 
+				{
+					"moveClockweise": "drehen im Urzeigersinn {arc} [Grad] | im Urzeigersinn {arc} [Grad] | drehen rechts | drehen rechts {arc} [Grad]",
+					"moveCounterClockweise": "drehen gegen den Urzeigersinn {arc} [Grad] | gegen den Urzeigersinn {arc} [Grad] | drehen links | drehen links {arc} [Grad]",
+					"moveDown": "runtenfahren | runter",
+					"moveUp": "hochfahren | hoch",
+					"touch": "greifen",
+					"release": "öffne | loslassen"
+				},
+
+				"name": "Krane"
+			}
+		}
+	}
+}
