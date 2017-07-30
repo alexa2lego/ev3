@@ -11,6 +11,7 @@ import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.UNHANDLED
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.WELCOME_TEXT;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,13 +24,17 @@ import org.slf4j.LoggerFactory;
 import com.amazon.speech.json.SpeechletRequestEnvelope;
 import com.amazon.speech.slu.Intent;
 import com.amazon.speech.slu.Slot;
+import com.amazon.speech.speechlet.Directive;
 import com.amazon.speech.speechlet.IntentRequest;
+import com.amazon.speech.speechlet.IntentRequest.DialogState;
 import com.amazon.speech.speechlet.LaunchRequest;
 import com.amazon.speech.speechlet.Session;
 import com.amazon.speech.speechlet.SessionEndedRequest;
 import com.amazon.speech.speechlet.SessionStartedRequest;
 import com.amazon.speech.speechlet.SpeechletResponse;
 import com.amazon.speech.speechlet.SpeechletV2;
+import com.amazon.speech.speechlet.dialog.directives.DelegateDirective;
+import com.amazon.speech.speechlet.dialog.directives.DialogIntent;
 import com.amazon.speech.ui.OutputSpeech;
 import com.amazon.speech.ui.PlainTextOutputSpeech;
 import com.amazon.speech.ui.Reprompt;
@@ -45,23 +50,17 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Alexa2Ev3Speechlet.class);
 
-	private static final String COMMAND_INTENT1 = "GenericIntentA";
-	private static final String COMMAND_INTENT2 = "GenericIntentB";
-	private static final String COMMAND_INTENT3 = "GenericIntentC";
-	private static final String COMMAND_INTENT4 = "GenericIntentD";
-	private static final String COMMAND_INTENT5 = "GenericIntentE";
+	private static final String ALEXA2EV3_CARD_TITLE = "Alexa2LEGO";
 
-	private static final String STATE_REQUEST_INTENT = "StateRequestIntent";
+	private static final String COMMAND_INTENT = "CommandIntent";
 
-	private static final String ALEXA2EV3_CARD_TITLE = "Alexa2Robot";
+	private static final String SLOT_DEVICENAME = "deviceName";
 
-	private static final String SLOT_RECEIVER = "SlotA";
+	private static final String SLOT_ACTION = "action";
 
-	private static final String SLOT_ACTION = "SlotB";
+	private static final String SLOT_OPTION = "option";
 
-	private static final String SLOT_OPTION = "SlotC";
-
-	private static final String SLOT_VALUE = "Value";
+	private static final String SLOT_PARAMETER = "parameter";
 
 	private Alexa2Ev3IotClient iotClient;
 
@@ -142,7 +141,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	 */
 	@Override
 	public SpeechletResponse onIntent(SpeechletRequestEnvelope<IntentRequest> speechletRequestEnvelope) {
-		SpeechletResponse response;
+		SpeechletResponse response = null;
 		IntentRequest intentRequest = speechletRequestEnvelope.getRequest();
 		Session session = speechletRequestEnvelope.getSession();
 
@@ -152,28 +151,51 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		String intentName = getIntentName(intent);
 
 		LOG.info("Intent received: {}", intentName);
+
 		if (intentName != null) {
+			// Get Dialog State
+			DialogState dialogueState = intentRequest.getDialogState();
+
 			switch (intentName) {
-			case COMMAND_INTENT1:
-			case COMMAND_INTENT2:
-			case COMMAND_INTENT3:
-			case COMMAND_INTENT4:
-			case COMMAND_INTENT5:
-				try {
-					response = handleCommandIntent(intent, session);
-				} catch (Alexa2Ev3Exception e) {
-					LOG.error(e.getMessage(), e);
-					response = getAskResponse(ERROR_TEXT.getDeText());
+
+			case COMMAND_INTENT:
+
+				if (dialogueState.equals(DialogState.STARTED) || dialogueState.equals(DialogState.IN_PROGRESS)) {
+
+					DialogIntent dialogIntent = new DialogIntent(intentRequest.getIntent());
+					DelegateDirective dd = new DelegateDirective();
+					dd.setUpdatedIntent(dialogIntent);
+
+					List<Directive> directiveList = new ArrayList<Directive>();
+					directiveList.add(dd);
+
+					SpeechletResponse speechletResp = new SpeechletResponse();
+					speechletResp.setDirectives(directiveList);
+					speechletResp.setShouldEndSession(false);
+					LOG.debug("Intent Slots: " + intent.getSlots());
+					return speechletResp;
+
+				} else {
+
+					LOG.debug("dialogueState  = COMPLETED ");
+					LOG.debug("Intent Slots: " + intent.getSlots());
+					String deviceName = intent.getSlot(SLOT_DEVICENAME).getValue();
+					String action = intent.getSlot(SLOT_ACTION).getValue();
+					String option = intent.getSlot(SLOT_OPTION).getValue();
+					String parameter = intent.getSlot(SLOT_PARAMETER).getValue();
+					option = option == null ? "" : option;
+					parameter = parameter == null ? "" : parameter;
+					try {
+						return handleCommand(deviceName, action, option, parameter);
+					} catch (Alexa2Ev3Exception e) {
+						LOG.error(e.getMessage(), e);
+						response = getAskResponse(ERROR_TEXT.getDeText());
+					}
+
 				}
+
 				break;
-			case STATE_REQUEST_INTENT:
-				try {
-					response = handleStateRequestIntent(intent);
-				} catch (Alexa2Ev3Exception e) {
-					LOG.error(e.getMessage(), e);
-					response = getAskResponse(ERROR_TEXT.getDeText());
-				}
-				break;
+
 			case "AMAZON.StopIntent":
 			case "AMAZON.CancelIntent":
 				response = handleStopIntent(session);
@@ -190,42 +212,24 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		return response;
 	}
 
-	private SpeechletResponse handleCommandIntent(Intent intent, Session session) throws Alexa2Ev3Exception {
-		Slot receiverSlot = intent.getSlot(SLOT_RECEIVER);
+	private SpeechletResponse handleCommand(String device, String action, String option, String value)
+			throws Alexa2Ev3Exception {
+		Alexa2Ev3Command command = null;
+		LOG.debug("Command: " + device + " " + action + " " + option + " " + value);
 
-		if (receiverSlot != null && !Strings.isEmpty(receiverSlot.getValue())) {
-			String receiver = receiverSlot.getValue();
-			Slot actionSlot = intent.getSlot(SLOT_ACTION);
-			Alexa2Ev3Command command = null;
-			String action = "";
-			String option = "";
-			String value = "";
-			if (actionSlot != null) {
-				action = actionSlot.getValue();
-				if (!Strings.isEmpty(action)) {
-					Slot optionSlot = intent.getSlot(SLOT_OPTION);
+		if (!Strings.isEmpty(action)) {
 
-					if (optionSlot != null && optionSlot.getValue() != null) {
-						option = optionSlot.getValue();
-					}
-					Slot valueSlot = intent.getSlot(SLOT_VALUE);
-
-					if (valueSlot != null && valueSlot.getValue() != null) {
-						value = valueSlot.getValue();
-					}
-					command = generateEv3Command(receiver, action, option, value);
-				}
-			}
-
-			if (command != null) {
-				iotClient.sendCommand(receiver, command);
-				return getConfirmResponse(receiver, command.getAction(), command.getValue());
-			} else {
-				return getAskResponse(
-						String.format(COMMAND_MISUNDERSTOOD_TEXT.getDeText(), receiver + " " + action + " " + option));
-			}
+			command = generateEv3Command(device, action, option, value);
+			LOG.debug("Command found: " + command);
 		}
-		return getAskResponse(UNHANDLED_TEXT.getDeText());
+
+		if (command != null) {
+			iotClient.sendCommand(device, command);
+			return getConfirmResponse(device, command.getAction(), command.getValue());
+		}
+		return getAskResponse(
+				String.format(COMMAND_MISUNDERSTOOD_TEXT.getDeText(), device + " " + action + " " + option));
+
 	}
 
 	private Alexa2Ev3Command generateEv3Command(final String receiver, final String action, final String option,
@@ -243,7 +247,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 	}
 
 	private SpeechletResponse handleStateRequestIntent(final Intent intent) throws Alexa2Ev3Exception {
-		Slot receiverSlot = intent.getSlot(SLOT_RECEIVER);
+		Slot receiverSlot = intent.getSlot(SLOT_DEVICENAME);
 		if (receiverSlot != null && receiverSlot.getValue() != null) {
 
 			Ev3Device thing = iotClient.getThingState(receiverSlot.getValue());
