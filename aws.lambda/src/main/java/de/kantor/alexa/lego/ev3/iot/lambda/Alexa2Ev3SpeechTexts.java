@@ -4,7 +4,7 @@ public enum Alexa2Ev3SpeechTexts {
 
 	// @formatter:off
 	WELCOME_TEXT(
-			"Hallo! Du kannst folgende Geräte per Sprache steuern: %s. Ich schicke Dir Liste von allen möglichen Befehlen. Bitte gebe mir Dein Kommando...",""),
+			"Du kannst %s steuern. Ich schicke Dir Liste von allen möglichen Befehlen. Bitte gebe mir Dein Kommando...",""),
 
 	DEVICE_INACTIVE("Der Roboter scheint nicht aktiv zu sein",""),
 
@@ -14,19 +14,14 @@ public enum Alexa2Ev3SpeechTexts {
 
 	UNHANDLED_TEXT("Ich habe Dein Kommando nicht verstanden. Bitte versuche es noch ein mal.", ""),
 
-	COMMAND_MISUNDERSTOOD_TEXT("Dein Kommando: %s habe ich nicht verstanden. Bitte versuche es noch ein mal.", ""),
+	COMMAND_MISUNDERSTOOD_TEXT("Dein Kommando: %s kann ich nicht ausführen. Bitte versuche es noch ein mal.", ""),
 
-	ERROR_TEXT("Es ist ein Fehler aufgetreten. Versuche noch mal, bitte.", ""),
+	ERROR_TEXT("Es ist ein Fehler aufgetreten. Versuche es noch mal, bitte.", ""),
 
 	SAY_AGAIN_TEXT("Sag bitte noch mal.", ""),
 
-	COMMAND_CONFIRMATION_TEXT("okay: %s", ""),
+	COMMAND_CONFIRMATION_TEXT("okay: %s", "");
 
-	STATE_REPROMT_TEXT("Du kannst Status Deiner Roboter abfragen, indem Du Name vom Roboter und Status sagst", ""),
-
-	CURRENT_VOLTAGE_NOT_FOUND_TEXT("Die Spannung konnte nicht ermittelt werden.", ""),
-
-	CURRENT_VOLTAGE_TEXT("Die Spannung beträgt %s Volt.", "");
 	
 	// @formatter:on
 
