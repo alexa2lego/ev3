@@ -1,7 +1,7 @@
 package de.kantor.alexa.lego.ev3.iot.lambda;
 
+import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.COMMAND_CANNOT_BE_UNDERSTOOD_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.COMMAND_CONFIRMATION_TEXT;
-import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.COMMAND_MISUNDERSTOOD_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.ERROR_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.GOODBYE_TEXT;
 import static de.kantor.alexa.lego.ev3.iot.lambda.Alexa2Ev3SpeechTexts.HELP_TEXT;
@@ -97,7 +97,6 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		LaunchRequest launchRequest = speechletRequestEnvelope.getRequest();
 		Session session = speechletRequestEnvelope.getSession();
 		LOG.info("onLaunch requestId={}, sessionId={}", launchRequest.getRequestId(), session.getSessionId());
-		String infoCardText = getAllCommandsAsText();
 		devices = dynamoDBClient.findAllDevices();
 		LOG.info(devices.toString());
 		iotClient = Alexa2Ev3IotClient.getInstance(devices);
@@ -105,6 +104,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		List<String> deviceNames = devices.stream().map(d -> d.getDeviceName()).collect(Collectors.toList());
 		String devicesText = String.join(" und ", String.join(", ", deviceNames.subList(0, last)),
 				deviceNames.get(last));
+		String infoCardText = getAllCommandsAsText();
 
 		return getAskResponseAndInfoCard(String.format(WELCOME_TEXT.getDeText(), devicesText), infoCardText);
 	}
@@ -153,14 +153,10 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		if (intentName != null) {
 			switch (intentName) {
 			case COMMAND_INTENT:
-				DialogState dialogueState = intentRequest.getDialogState();
-				if (dialogueState.equals(DialogState.STARTED)) {
-					LOG.debug("dialogState  = STARTED ");
-					response = getDialogResponse(intent);
-				} else if (dialogueState.equals(DialogState.IN_PROGRESS)) {
-					LOG.debug("dialogState  = IN_PROGRESS ");
-					response = getDialogResponse(intent);
-				} else {
+				DialogState dialogState = intentRequest.getDialogState();
+				if (DialogState.STARTED.equals(dialogState) || DialogState.IN_PROGRESS.equals(dialogState)) {
+					response = getDialogResponse(intent, dialogState, session);
+				} else if (DialogState.COMPLETED.equals(dialogState)) {
 					LOG.debug("dialogState  = COMPLETED ");
 					try {
 						response = handleCommandIntent(intent);
@@ -170,7 +166,6 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 					}
 				}
 				break;
-
 			case "AMAZON.StopIntent":
 			case "AMAZON.CancelIntent":
 				response = handleStopIntent(session);
@@ -187,8 +182,9 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 		return response;
 	}
 
-	private SpeechletResponse getDialogResponse(final Intent intent) {
-
+	private SpeechletResponse getDialogResponse(final Intent intent, final DialogState dialogueState,
+			final Session session) {
+		LOG.debug("dialogueState: " + dialogueState.name());
 		DialogIntent dialogIntent = new DialogIntent(intent);
 		DelegateDirective dd = new DelegateDirective();
 		dd.setUpdatedIntent(dialogIntent);
@@ -220,7 +216,7 @@ public class Alexa2Ev3Speechlet implements SpeechletV2 {
 			iotClient.sendCommand(deviceName, command);
 			return getConfirmResponse(deviceName, command.getAction(), command.getValue());
 		}
-		return getAskResponse(String.format(COMMAND_MISUNDERSTOOD_TEXT.getDeText(), commandText));
+		return getAskResponse(String.format(COMMAND_CANNOT_BE_UNDERSTOOD_TEXT.getDeText(), commandText));
 
 	}
 

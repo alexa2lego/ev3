@@ -14,7 +14,7 @@ public enum Alexa2Ev3SpeechTexts {
 
 	UNHANDLED_TEXT("Ich habe Dein Kommando nicht verstanden. Bitte versuche es noch ein mal.", ""),
 
-	COMMAND_MISUNDERSTOOD_TEXT("Dein Kommando: %s kann ich nicht ausführen. Bitte versuche es noch ein mal.", ""),
+	COMMAND_CANNOT_BE_UNDERSTOOD_TEXT("Dein Kommando: %s kann ich nicht ausführen. Bitte versuche es noch ein mal.", ""),
 
 	ERROR_TEXT("Es ist ein Fehler aufgetreten. Versuche es noch mal, bitte.", ""),
 

@@ -55,13 +55,11 @@ public class Alexa2Ev3IotClient {
 	}
 
 	public static synchronized Alexa2Ev3IotClient getInstance(List<Ev3Device> ev3Devices) {
-		if (instance != null) {
-			throw new IllegalStateException("already initialized");
+		if (instance == null) {
+
+			instance = new Alexa2Ev3IotClient(System.getenv("aws_iot_endpoint"), System.getenv("aws_iot_client"),
+					System.getenv("aws_iot_accessKeyId"), System.getenv("aws_iot_secretAccessKey"), ev3Devices);
 		}
-
-		instance = new Alexa2Ev3IotClient(System.getenv("aws_iot_endpoint"), System.getenv("aws_iot_client"),
-				System.getenv("aws_iot_accessKeyId"), System.getenv("aws_iot_secretAccessKey"), ev3Devices);
-
 		return instance;
 	}
 

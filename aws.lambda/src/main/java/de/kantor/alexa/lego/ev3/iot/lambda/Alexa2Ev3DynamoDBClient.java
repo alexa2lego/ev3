@@ -40,13 +40,10 @@ public class Alexa2Ev3DynamoDBClient {
 	}
 
 	public static synchronized Alexa2Ev3DynamoDBClient getInstance() {
-		if (instance != null) {
-			throw new IllegalStateException("already initialized");
+		if (instance == null) {
+			instance = new Alexa2Ev3DynamoDBClient(System.getenv("aws_iot_endpoint"), System.getenv("aws_iot_client"),
+					System.getenv("aws_iot_accessKeyId"), System.getenv("aws_iot_secretAccessKey"));
 		}
-
-		instance = new Alexa2Ev3DynamoDBClient(System.getenv("aws_iot_endpoint"), System.getenv("aws_iot_client"),
-				System.getenv("aws_iot_accessKeyId"), System.getenv("aws_iot_secretAccessKey"));
-
 		return instance;
 	}
 
