@@ -1,47 +1,349 @@
 {
   "intents": [
     {
-      "intent": "AMAZON.RepeatIntent"
+      "name": "AMAZON.CancelIntent",
+      "samples": []
     },
     {
+      "name": "AMAZON.HelpIntent",
+      "samples": []
+    },
+    {
+      "name": "AMAZON.StopIntent",
+      "samples": []
+    },
+    {
+      "name": "CommandIntent",
+      "samples": [
+        "Gerät {deviceName} {action} {option}"
+      ],
       "slots": [
         {
-          "name": "Action",
-          "type": "LIST_OF_ACTIONS"
+          "name": "deviceName",
+          "type": "DEVICE_NAME_TYPE",
+          "samples": [
+            "{deviceName}"
+          ]
         },
         {
-          "name": "Value",
-          "type": "AMAZON.NUMBER"
+          "name": "action",
+          "type": "ACTION_TYPE",
+          "samples": [
+            "{action} {option} {value}"
+          ]
+        },
+        {
+          "name": "option",
+          "type": "OPTION_TYPE",
+          "samples": [
+            "{option} {value}"
+          ]
+        },
+        {
+          "name": "value",
+          "type": "AMAZON.NUMBER",
+          "samples": []
         }
-      ],
-      "intent": "CraneCommandIntent"
+      ]
     },
     {
+      "name": "CommandIntentWithValue",
+      "samples": [
+        "Gerät {deviceName} {action} {option} {value}"
+      ],
       "slots": [
         {
-          "name": "PIN",
-          "type": "AMAZON.NUMBER"
-        }
-      ],
-      "intent": "EnterPinIntent"
-    },
-    {
-      "slots": [
+          "name": "deviceName",
+          "type": "DEVICE_NAME_TYPE",
+          "samples": [
+            "{deviceName}"
+          ]
+        },
         {
-          "name": "Parameter",
-          "type": "LIST_OF_PARAMETERS"
+          "name": "action",
+          "type": "ACTION_TYPE",
+          "samples": [
+            "{action} {option} {value}"
+          ]
+        },
+        {
+          "name": "option",
+          "type": "OPTION_TYPE",
+          "samples": [
+            "{option} {value}"
+          ]
+        },
+        {
+          "name": "value",
+          "type": "AMAZON.NUMBER",
+          "samples": []
         }
-      ],
-      "intent": "BrickStateRequestIntent"
-    },
-    {
-      "intent": "AMAZON.HelpIntent"
-    },
-    {
-      "intent": "AMAZON.StopIntent"
-    },
-    {
-      "intent": "AMAZON.CancelIntent"
+      ]
     }
-  ]
+  ],
+  "types": [
+    {
+      "name": "ACTION_TYPE",
+      "values": [
+        {
+          "id": "fahren",
+          "name": {
+            "value": "fahren",
+            "synonyms": [
+              "bewegen",
+              "bewege",
+              "fahre"
+            ]
+          }
+        },
+        {
+          "id": "drehen",
+          "name": {
+            "value": "drehen",
+            "synonyms": [
+              "drehe"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "DEVICE_NAME_TYPE",
+      "values": [
+        {
+          "id": null,
+          "name": {
+            "value": "xbcvdsjfhsdhjbvydfghykjdhbvyjdbvycnxbv",
+            "synonyms": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "OPTION_TYPE",
+      "values": [
+        {
+          "id": "links",
+          "name": {
+            "value": "links",
+            "synonyms": [
+              "nach links"
+            ]
+          }
+        },
+        {
+          "id": "rechts",
+          "name": {
+            "value": "rechts",
+            "synonyms": [
+              "nach rechts"
+            ]
+          }
+        },
+        {
+          "id": "hoch",
+          "name": {
+            "value": "hoch",
+            "synonyms": [
+              "nach oben"
+            ]
+          }
+        },
+        {
+          "id": "runter",
+          "name": {
+            "value": "runter",
+            "synonyms": [
+              "nach unten"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "prompts": [
+    {
+      "id": "Confirm.Intent-CommandIntent",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "Gerät {deviceName} {action} {option} - ist das korrekt?"
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-CommandIntent.IntentSlot-deviceName",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "sag mir bitte den Name des Gerät für das Kommando "
+        },
+        {
+          "type": "PlainText",
+          "value": "welches Gerät muss ich ansteuern?"
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-CommandIntent.IntentSlot-action",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "Welches Kommando muss  ich an das Gerät {deviceName} schicken?"
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-CommandIntent.IntentSlot-option",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "Wie soll {deviceName} {action}?"
+        }
+      ]
+    },
+    {
+      "id": "Confirm.Intent-CommandIntentWithValue",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "Gerät {deviceName} {action} {option} {value} - ist das korrekt?"
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-CommandIntentWithValue.IntentSlot-deviceName",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "An welches Gerät soll ich ein Kommando schicken?"
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-CommandIntentWithValue.IntentSlot-action",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "Gib mir das Kommando an"
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-CommandIntentWithValue.IntentSlot-option",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "Wie soll {deviceName} {action}?"
+        }
+      ]
+    }
+  ],
+  "dialog": {
+    "version": "1.0",
+    "intents": [
+      {
+        "name": "CommandIntent",
+        "confirmationRequired": true,
+        "prompts": {
+          "confirm": "Confirm.Intent-CommandIntent"
+        },
+        "slots": [
+          {
+            "name": "deviceName",
+            "type": "DEVICE_NAME_TYPE",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicit": "Elicit.Intent-CommandIntent.IntentSlot-deviceName"
+            }
+          },
+          {
+            "name": "action",
+            "type": "ACTION_TYPE",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicit": "Elicit.Intent-CommandIntent.IntentSlot-action"
+            }
+          },
+          {
+            "name": "option",
+            "type": "OPTION_TYPE",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicit": "Elicit.Intent-CommandIntent.IntentSlot-option"
+            }
+          },
+          {
+            "name": "value",
+            "type": "AMAZON.NUMBER",
+            "elicitationRequired": false,
+            "confirmationRequired": false,
+            "prompts": {}
+          }
+        ]
+      },
+      {
+        "name": "CommandIntentWithValue",
+        "confirmationRequired": true,
+        "prompts": {
+          "confirm": "Confirm.Intent-CommandIntentWithValue"
+        },
+        "slots": [
+          {
+            "name": "deviceName",
+            "type": "DEVICE_NAME_TYPE",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicit": "Elicit.Intent-CommandIntentWithValue.IntentSlot-deviceName"
+            }
+          },
+          {
+            "name": "action",
+            "type": "ACTION_TYPE",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicit": "Elicit.Intent-CommandIntentWithValue.IntentSlot-action"
+            }
+          },
+          {
+            "name": "option",
+            "type": "OPTION_TYPE",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicit": "Elicit.Intent-CommandIntentWithValue.IntentSlot-option"
+            }
+          },
+          {
+            "name": "value",
+            "type": "AMAZON.NUMBER",
+            "elicitationRequired": false,
+            "confirmationRequired": false,
+            "prompts": {}
+          }
+        ]
+      }
+    ]
+  }
 }
