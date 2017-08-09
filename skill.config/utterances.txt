@@ -1,7 +1,2 @@
-CraneCommandIntent {Action}
-CraneCommandIntent {Action} {Value}
-BrickStateRequestIntent Status {Parameter}
-BrickStateRequestIntent Status von {Parameter}
-EnterPinIntent PIN ist {PIN}
-EnterPinIntent PIN laut {PIN}
-EnterPinIntent PIN {PIN}
+CommandIntent Gerät {deviceName} {action} {option}
+CommandIntentWithValue Gerät {deviceName} {action} {option} {value}
